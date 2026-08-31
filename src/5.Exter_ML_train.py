@@ -1,3 +1,4 @@
+import argparse
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -28,6 +29,73 @@ from sklearn.inspection import permutation_importance
 import json
 from scipy import stats
 
+LANG = os.environ.get("HG_MC_AUTO_LANG", "zh").lower()
+TRANSLATIONS = {
+    "zh": {
+        "title": "机器学习分类程序",
+        "input_data": "请输入输入数据文件路径（all_empirical_model_classified_data.xlsx）（Excel 格式）: ",
+        "input_output": "请输入输出结果目录路径（推荐放在 Model_Exter 文件夹中）: ",
+        "path_empty": "路径不能为空，请重新输入。",
+        "not_exist": "文件不存在: {path}，请重新输入。",
+        "excel_required": "请提供 Excel 文件（.xlsx 或 .xls 格式）",
+    },
+    "en": {
+        "title": "Machine Learning Classification Program",
+        "input_data": "Please enter the input data file path (all_empirical_model_classified_data.xlsx) (Excel format): ",
+        "input_output": "Please enter the output results directory path (Recommended to be in the Model_Exter folder): ",
+        "path_empty": "Path cannot be empty, please re-enter.",
+        "not_exist": "File does not exist: {path}, please re-enter.",
+        "excel_required": "Please provide an Excel file (.xlsx or .xls format)",
+    },
+}
+
+
+def apply_lang_from_cli():
+    global LANG
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument("--lang", choices=["zh", "en"], default=os.environ.get("HG_MC_AUTO_LANG", "zh"))
+    args, _ = parser.parse_known_args()
+    LANG = args.lang.lower()
+    os.environ["HG_MC_AUTO_LANG"] = LANG
+
+
+def text(key, **kwargs):
+    template = TRANSLATIONS.get(LANG, TRANSLATIONS["zh"]).get(key, key)
+    try:
+        return template.format(**kwargs)
+    except Exception:
+        return template
+
+
+def get_user_paths():
+    """Get input and output paths from user"""
+    print("=" * 60)
+    print(text("title"))
+    print("=" * 60)
+    
+    while True:
+        data_path = input(text("input_data")).strip()
+        if not data_path:
+            print(text("path_empty"))
+            continue
+        if not os.path.exists(data_path):
+            print(text("not_exist", path=data_path))
+            continue
+        if not data_path.lower().endswith(('.xlsx', '.xls')):
+            print(text("excel_required"))
+            continue
+        break
+    
+    while True:
+        results_dir = input(text("input_output")).strip()
+        if not results_dir:
+            print(text("path_empty"))
+            continue
+        break
+    
+    os.makedirs(results_dir, exist_ok=True)
+    return data_path, results_dir
+
 # Set plotting fonts and style for Nature style
 plt.rcParams['font.sans-serif'] = ['Arial', 'DejaVu Sans']
 plt.rcParams['axes.unicode_minus'] = False
@@ -45,39 +113,6 @@ plt.rcParams['savefig.dpi'] = 300
 # Seaborn style with Nature-like color palette
 sns.set_style("white")
 sns.set_palette("colorblind")
-
-def get_user_paths():
-    """Get input and output paths from user"""
-    print("=" * 60)
-    print("Machine Learning Classification Program")
-    print("=" * 60)
-    
-    # Get input file path
-    while True:
-        data_path = input("Please enter the input data file path (all_empirical_model_classified_data.xlsx) (Excel format): ").strip()
-        if not data_path:
-            print("Path cannot be empty, please re-enter.")
-            continue
-        if not os.path.exists(data_path):
-            print(f"File does not exist: {data_path}, please re-enter.")
-            continue
-        if not data_path.lower().endswith(('.xlsx', '.xls')):
-            print("Please provide an Excel file (.xlsx or .xls format)")
-            continue
-        break
-    
-    # Get output directory path
-    while True:
-        results_dir = input("Please enter the output results directory path (Recommended to be in the Model_Exter folder): ").strip()
-        if not results_dir:
-            print("Path cannot be empty, please re-enter.")
-            continue
-        break
-    
-    # Create results directory
-    os.makedirs(results_dir, exist_ok=True)
-    
-    return data_path, results_dir
 
 # Read data - MODIFIED: Include Label as feature
 def load_and_preprocess_data(data_path):
@@ -1415,6 +1450,7 @@ def save_improved_models_and_results(all_results, top3_models_info, preprocessor
 # Main function - MODIFIED to handle all new requirements
 def main():
     """Main execution function"""
+    apply_lang_from_cli()
     print("Starting machine learning classification prediction...")
     
     # 1. Get user input paths

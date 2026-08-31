@@ -4,18 +4,57 @@
 # Task 3: Merge two tables, add "Label" column, mark files containing "3133" as 3133, "3177" as 3177, "8610" as 8610, and other test samples as "sample", generating "Before_Fractionation_Calculation.xlsx"
 # Task 4: Fractionation calculation based on "Before_Fractionation_Calculation.xlsx", generating "Before_Fractionation_Calculation_Completed.xlsx"
 
+import argparse
 import os
 import re
 import pandas as pd
 import numpy as np
 
+LANG = os.environ.get("HG_MC_AUTO_LANG", "zh").lower()
+
+TRANSLATIONS = {
+    "zh": {
+        "input_log": "请输入 .log 文件路径: ",
+        "input_output": "请输入输出文件路径（需与先前导出的 .csv 同位素文件位于同一文件夹中）: ",
+        "extract_params": "正在提取仪器参数...",
+        "extract_isotopes": "正在提取同位素测试值...",
+        "merge_labels": "正在合并数据并添加标签...",
+        "fractionation": "正在进行分馏计算...",
+        "calc_d_values": "正在计算 D199(‰), D200(‰), D201(‰)...",
+    },
+    "en": {
+        "input_log": "Please enter the .log file path: ",
+        "input_output": "Please enter the output file path (It needs to be in the same folder as the .csv isotope file you exported earlier.): ",
+        "extract_params": "Extracting instrument parameters...",
+        "extract_isotopes": "Extracting isotope test values...",
+        "merge_labels": "Merging data and adding labels...",
+        "fractionation": "Performing fractionation calculation...",
+        "calc_d_values": "Calculating D199(‰), D200(‰), D201(‰)...",
+    },
+}
+
+
+def apply_lang_from_cli():
+    global LANG
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument("--lang", choices=["zh", "en"], default=os.environ.get("HG_MC_AUTO_LANG", "zh"))
+    args, _ = parser.parse_known_args()
+    LANG = args.lang.lower()
+    os.environ["HG_MC_AUTO_LANG"] = LANG
+
+
+def text(key):
+    return TRANSLATIONS.get(LANG, TRANSLATIONS["zh"]).get(key, key)
+
+
 def main():
+    apply_lang_from_cli()
     # Get user input paths
-    DAT_DIR = input("Please enter .log file path: ")
-    OUTPUT_DIR = input("Please enter output file path (It needs to be in the same folder as the .csv isotope file you exported earlier.): ")
+    DAT_DIR = input(text("input_log"))
+    OUTPUT_DIR = input(text("input_output"))
     
     # Code 1: Extract instrument parameters
-    print("Extracting instrument parameters...")
+    print(text("extract_params"))
     fields = [
         "Extraction[V]", "Focus[V]", "Source Quad1[V]", "Rot-Quad1[V]", "Foc-Quad1[V]",
         "Rot-Quad2[V]", "Source Offset[V]", "Matsuda Plate[V]", "Cool Gas[l/min]",

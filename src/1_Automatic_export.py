@@ -51,7 +51,9 @@ def ensure_desktop_ready():
 class LanguageManager:
     """多语言管理器"""
     def __init__(self):
-        self.language = "zh"  # 默认中文
+        self.language = os.environ.get("HG_MC_AUTO_LANG", "zh").lower()
+        if self.language not in {"zh", "en"}:
+            self.language = "zh"
         self.translations = {
             "zh": self._chinese_translations(),
             "en": self._english_translations()
@@ -496,9 +498,11 @@ class LanguageManager:
         }
     
     def set_language(self, language):
-        """设置语言"""
-        if language in self.translations:
-            self.language = language
+        """设置语言，并同步写入环境变量，保证子流程和主入口保持一致。"""
+        normalized = str(language).lower()
+        if normalized in self.translations:
+            self.language = normalized
+            os.environ["HG_MC_AUTO_LANG"] = self.language
             return True
         return False
     
@@ -1893,15 +1897,21 @@ class MultilingualExportAssistant:
 # ==================== 程序入口 ====================
 def main():
     try:
-        # 创建助手实例
+        import argparse
+
+        parser = argparse.ArgumentParser(add_help=False)
+        parser.add_argument("--lang", choices=["zh", "en"], default=os.environ.get("HG_MC_AUTO_LANG", "zh"))
+        args, _ = parser.parse_known_args()
+
         assistant = MultilingualExportAssistant()
-        
-        # 选择语言
-        assistant.select_language()
-        
-        # 显示主菜单
+        assistant.lang.set_language(args.lang)
+
+        # If the selection was already set from the parent CLI, skip re-prompting.
+        if not any(token == "--lang" for token in sys.argv[1:]) and not os.environ.get("HG_MC_AUTO_LANG"):
+            assistant.select_language()
+
         assistant.main_menu()
-                
+
     except KeyboardInterrupt:
         print(f"\n\n{assistant.lang.t('program_interrupted')}")
     except Exception as e:
@@ -1912,4 +1922,5 @@ def main():
         print(f"\n{assistant.lang.t('exit')}")
 
 if __name__ == "__main__":
+    import sys
     main()

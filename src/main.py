@@ -12,7 +12,7 @@ app = typer.Typer(
     no_args_is_help=False,
 )
 
-APP_LANGUAGE = "zh"
+APP_LANGUAGE = os.environ.get("HG_MC_AUTO_LANG", "zh")
 LANG_TEXT = {
     "zh": {
         "welcome": "欢迎使用 Hg-MC-Auto",
@@ -75,12 +75,14 @@ def t(key):
 
 def set_language(language):
     global APP_LANGUAGE
-    normalized = language.lower()
+    normalized = str(language).lower()
     if normalized in {"zh", "cn", "zh-cn", "中文"}:
         APP_LANGUAGE = "zh"
+        os.environ["HG_MC_AUTO_LANG"] = APP_LANGUAGE
         return "zh"
     if normalized in {"en", "eng", "english"}:
         APP_LANGUAGE = "en"
+        os.environ["HG_MC_AUTO_LANG"] = APP_LANGUAGE
         return "en"
     raise ValueError("Language must be 'zh' or 'en'.")
 
@@ -125,10 +127,18 @@ def run_script(script_name):
         typer.secho(f"Expected path: {script_path}", fg=typer.colors.RED)
         return False
 
+    env = os.environ.copy()
+    env["HG_MC_AUTO_LANG"] = APP_LANGUAGE
+
     try:
         typer.secho(f"\n[STEP] Running {script_name}...", fg=typer.colors.GREEN, bold=True)
         typer.secho("=" * 48, fg=typer.colors.MAGENTA)
-        subprocess.run([sys.executable, script_path], check=True)
+        subprocess.run([
+            sys.executable,
+            script_path,
+            "--lang",
+            APP_LANGUAGE,
+        ], check=True, env=env)
         typer.secho("=" * 48, fg=typer.colors.MAGENTA)
         typer.secho(f"[OK] {script_name} completed successfully.", fg=typer.colors.GREEN, bold=True)
         return True
@@ -149,7 +159,18 @@ def wait_for_enter():
 def run_task(task_name):
     """Run a registered task and return whether it succeeded."""
     script_name, description = TASKS[task_name]
-    print(f"\nYou selected: {description}")
+    if APP_LANGUAGE == "zh":
+        zh_text = {
+            "export": "\n已选择：自动导出同位素数据",
+            "calculate": "\n已选择：导出仪器参数并计算同位素分馏值",
+            "empirical": "\n已选择：使用经验模型进行分类",
+            "predict": "\n已选择：使用机器学习模型进行分类",
+            "train-external": "\n已选择：训练外部 ML 模型",
+            "train-internal": "\n已选择：训练内部 ML 模型",
+        }
+        print(zh_text.get(task_name, f"\n已选择：{description}"))
+    else:
+        print(f"\nYou selected: {description}")
     return run_script(script_name)
 
 

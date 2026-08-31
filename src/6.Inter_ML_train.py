@@ -13,9 +13,72 @@ from sklearn.impute import SimpleImputer
 import warnings
 warnings.filterwarnings('ignore')
 import os
+import argparse
 import joblib
 from datetime import datetime
 import matplotlib as mpl
+
+LANG = os.environ.get("HG_MC_AUTO_LANG", "zh").lower()
+
+TRANSLATIONS = {
+    "zh": {
+        "banner_title": "Hg 同位素异常分类",
+        "banner_subtitle": "分析系统",
+        "input_data": "请输入输入数据文件路径（all_abnormal_data_processed.xlsx）（Excel 格式）: ",
+        "input_output": "请输入输出结果目录路径（建议放在 Model_Inter 文件夹中）: ",
+        "path_empty": "路径不能为空，请重新输入。",
+        "not_exist": "文件不存在: {path}，请重新输入。",
+        "excel_required": "请提供 Excel 文件（.xlsx 或 .xls 格式）",
+        "feature_title": "特征集选择",
+        "feature_prompt": "请选择特征集:",
+        "feature_basic": "1. 仅使用基础特征",
+        "feature_enhanced": "2. 使用增强地球化学特征",
+        "choice_prompt": "请输入选择 (1 或 2): ",
+        "invalid_choice": "无效选择。请输入 1 或 2。",
+        "selected": "已选择: {feature} 特征",
+        "data_path": "数据路径: {path}",
+        "output_dir": "输出目录: {dir}",
+        "feature_option_basic": "基础",
+        "feature_option_enhanced": "增强",
+    },
+    "en": {
+        "banner_title": "Hg Isotope Anomaly Classification",
+        "banner_subtitle": "Analysis System",
+        "input_data": "Please enter the input data file path (all_abnormal_data_processed.xlsx) (Excel format): ",
+        "input_output": "Please enter the output results directory path (Recommended to be in the Model_Inter folder): ",
+        "path_empty": "Path cannot be empty, please re-enter.",
+        "not_exist": "File does not exist: {path}, please re-enter.",
+        "excel_required": "Please provide an Excel file (.xlsx or .xls format)",
+        "feature_title": "Feature Set Selection",
+        "feature_prompt": "Please select feature set:",
+        "feature_basic": "1. Basic features only",
+        "feature_enhanced": "2. Enhanced geochemical features",
+        "choice_prompt": "Enter your choice (1 or 2): ",
+        "invalid_choice": "Invalid choice. Please enter 1 or 2.",
+        "selected": "Selected: {feature} features",
+        "data_path": "Data path: {path}",
+        "output_dir": "Output directory: {dir}",
+        "feature_option_basic": "basic",
+        "feature_option_enhanced": "enhanced",
+    },
+}
+
+
+def apply_lang_from_cli():
+    global LANG
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument("--lang", choices=["zh", "en"], default=os.environ.get("HG_MC_AUTO_LANG", "zh"))
+    args, _ = parser.parse_known_args()
+    LANG = args.lang.lower()
+    os.environ["HG_MC_AUTO_LANG"] = LANG
+
+
+def text(key, **kwargs):
+    template = TRANSLATIONS.get(LANG, TRANSLATIONS["zh"]).get(key, key)
+    try:
+        return template.format(**kwargs)
+    except Exception:
+        return template
 
 # Set Nature-style plotting parameters
 def set_nature_style():
@@ -67,28 +130,29 @@ set_nature_style()
 def get_user_paths():
     """Get input and output paths from user"""
     print("=" * 60)
-    print("Hg Isotope Anomaly Classification")
+    print(text("banner_title"))
+    print(text("banner_subtitle"))
     print("=" * 60)
     
     # Get input file path
     while True:
-        data_path = input("Please enter the input data file path (all_abnormal_data_processed.xlsx) (Excel format): ").strip()
+        data_path = input(text("input_data")).strip()
         if not data_path:
-            print("Path cannot be empty, please re-enter.")
+            print(text("path_empty"))
             continue
         if not os.path.exists(data_path):
-            print(f"File does not exist: {data_path}, please re-enter.")
+            print(text("not_exist", path=data_path))
             continue
         if not data_path.lower().endswith(('.xlsx', '.xls')):
-            print("Please provide an Excel file (.xlsx or .xls format)")
+            print(text("excel_required"))
             continue
         break
     
     # Get output directory path
     while True:
-        results_dir = input("Please enter the output results directory path (Recommended to be in the Model_Inter folder): ").strip()
+        results_dir = input(text("input_output")).strip()
         if not results_dir:
-            print("Path cannot be empty, please re-enter.")
+            print(text("path_empty"))
             continue
         break
     
@@ -900,25 +964,26 @@ class GeochemicalMLAnalyzer:
 
 def main():
     """Main function with user input for paths and feature selection"""
+    apply_lang_from_cli()
     
     print("=" * 60)
-    print("          Hg Isotope Anomaly Classification")
-    print("                  Analysis System")
+    print(f"          {text('banner_title')}")
+    print(f"                  {text('banner_subtitle')}")
     print("=" * 60)
     
     # Get user paths
     data_path, output_dir = get_user_paths()
     
     print("\n" + "=" * 40)
-    print("Feature Set Selection")
+    print(text("feature_title"))
     print("=" * 40)
-    print("\nPlease select feature set:")
-    print("1. Basic features only")
-    print("2. Enhanced geochemical features")
+    print(f"\n{text('feature_prompt')}")
+    print(text("feature_basic"))
+    print(text("feature_enhanced"))
     print("-" * 40)
     
     while True:
-        choice = input("\nEnter your choice (1 or 2): ").strip()
+        choice = input(f"\n{text('choice_prompt')}").strip()
         if choice == '1':
             feature_option = 'basic'
             break
@@ -926,12 +991,12 @@ def main():
             feature_option = 'enhanced'
             break
         else:
-            print("❌ Invalid choice. Please enter 1 or 2.")
+            print(text("invalid_choice"))
     
     print(f"\n{'='*40}")
-    print(f"Selected: {feature_option.upper()} features")
-    print(f"Data path: {data_path}")
-    print(f"Output directory: {output_dir}")
+    print(text("selected", feature=text("feature_option_basic") if feature_option == 'basic' else text("feature_option_enhanced").upper()))
+    print(text("data_path", path=data_path))
+    print(text("output_dir", dir=output_dir))
     print(f"{'='*40}\n")
     
     # Create analyzer with selected feature option and output directory

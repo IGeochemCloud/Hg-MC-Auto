@@ -1,3 +1,4 @@
+import argparse
 import os
 import pandas as pd
 import numpy as np
@@ -12,6 +13,118 @@ from sklearn.exceptions import NotFittedError
 import scipy.stats as stats
 import warnings
 warnings.filterwarnings('ignore')
+
+LANG = os.environ.get("HG_MC_AUTO_LANG", "zh").lower()
+
+TRANSLATIONS = {
+    "zh": {
+        "title": "组合机器学习推断程序",
+        "input_external": "请输入外部模型的输入数据文件路径（Excel 格式）: ",
+        "input_external_dir": "请输入外部模型目录路径（保存外部模型 .pkl 文件的目录）: ",
+        "input_internal": "请输入内部模型的输入数据文件路径（Excel 格式）: ",
+        "input_internal_dir": "请输入内部模型目录路径（保存内部模型 .pkl 文件的目录）: ",
+        "input_output": "请输入输出结果目录路径（建议放在 inference 文件夹中）: ",
+        "path_empty": "路径不能为空，请重新输入。",
+        "not_exist": "文件不存在: {path}，请重新输入。",
+        "dir_missing": "目录不存在: {path}，请重新输入。",
+        "excel_required": "请提供 Excel 文件（.xlsx 或 .xls 格式）",
+    },
+    "en": {
+        "title": "Combined Machine Learning Inference Program",
+        "input_external": "Please enter the input data file path for Normal/Abnormal classification (Excel format): ",
+        "input_external_dir": "Please enter the EXTERNAL model directory path (where the external model .pkl files are saved): ",
+        "input_internal": "Please enter the input data file path for Cause Analysis (Excel format): ",
+        "input_internal_dir": "Please enter the INTERNAL model directory path (where the internal model .pkl files are saved): ",
+        "input_output": "Please enter the output results directory path (It is recommended to place it in the inference folder) (): ",
+        "path_empty": "Path cannot be empty, please re-enter.",
+        "not_exist": "File does not exist: {path}, please re-enter.",
+        "dir_missing": "Directory does not exist: {path}, please re-enter.",
+        "excel_required": "Please provide an Excel file (.xlsx or .xls format)",
+    },
+}
+
+
+def apply_lang_from_cli():
+    global LANG
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument("--lang", choices=["zh", "en"], default=os.environ.get("HG_MC_AUTO_LANG", "zh"))
+    args, _ = parser.parse_known_args()
+    LANG = args.lang.lower()
+    os.environ["HG_MC_AUTO_LANG"] = LANG
+
+
+def text(key, **kwargs):
+    template = TRANSLATIONS.get(LANG, TRANSLATIONS["zh"]).get(key, key)
+    try:
+        return template.format(**kwargs)
+    except Exception:
+        return template
+
+
+def get_user_paths():
+    """Get input and output paths from user"""
+    print("=" * 60)
+    print(text("title"))
+    print("=" * 60)
+    
+    print("\n--- External Model Input (Normal/Abnormal Classification) ---")
+    while True:
+        external_data_path = input(text("input_external")).strip()
+        if not external_data_path:
+            print(text("path_empty"))
+            continue
+        if not os.path.exists(external_data_path):
+            print(text("not_exist", path=external_data_path))
+            continue
+        if not external_data_path.lower().endswith(('.xlsx', '.xls')):
+            print(text("excel_required"))
+            continue
+        break
+    
+    print("\n--- External Model Directory ---")
+    while True:
+        external_model_dir = input(text("input_external_dir")).strip()
+        if not external_model_dir:
+            print(text("path_empty"))
+            continue
+        if not os.path.exists(external_model_dir):
+            print(text("dir_missing", path=external_model_dir))
+            continue
+        break
+    
+    print("\n--- Internal Model Input (Cause Analysis) ---")
+    while True:
+        internal_data_path = input(text("input_internal")).strip()
+        if not internal_data_path:
+            print(text("path_empty"))
+            continue
+        if not os.path.exists(internal_data_path):
+            print(text("not_exist", path=internal_data_path))
+            continue
+        if not internal_data_path.lower().endswith(('.xlsx', '.xls')):
+            print(text("excel_required"))
+            continue
+        break
+    
+    print("\n--- Internal Model Directory ---")
+    while True:
+        internal_model_dir = input(text("input_internal_dir")).strip()
+        if not internal_model_dir:
+            print(text("path_empty"))
+            continue
+        if not os.path.exists(internal_model_dir):
+            print(text("dir_missing", path=internal_model_dir))
+            continue
+        break
+    
+    while True:
+        results_path = input(text("input_output")).strip()
+        if not results_path:
+            print(text("path_empty"))
+            continue
+        break
+    
+    return external_data_path, internal_data_path, external_model_dir, internal_model_dir, results_path
 
 # ============================ SETUP AND UTILITY FUNCTIONS ============================
 
@@ -33,76 +146,6 @@ def check_model_directory(model_dir):
             print(f"  📝 {file}")
     
     return files
-
-def get_user_paths():
-    """Get input and output paths from user"""
-    print("=" * 60)
-    print("Combined Machine Learning Inference Program")
-    print("=" * 60)
-    
-    # Get input file path for external model (normal/abnormal classification)
-    print("\n--- External Model Input (Normal/Abnormal Classification) ---")
-    while True:
-        external_data_path = input("Please enter the input data file path for Normal/Abnormal classification (Excel format): ").strip()
-        if not external_data_path:
-            print("Path cannot be empty, please re-enter.")
-            continue
-        if not os.path.exists(external_data_path):
-            print(f"File does not exist: {external_data_path}, please re-enter.")
-            continue
-        if not external_data_path.lower().endswith(('.xlsx', '.xls')):
-            print("Please provide an Excel file (.xlsx or .xls format)")
-            continue
-        break
-    
-    # Get model directory path for external model
-    print("\n--- External Model Directory ---")
-    while True:
-        external_model_dir = input("Please enter the EXTERNAL model directory path (where the external model .pkl files are saved): ").strip()
-        if not external_model_dir:
-            print("Path cannot be empty, please re-enter.")
-            continue
-        if not os.path.exists(external_model_dir):
-            print(f"Directory does not exist: {external_model_dir}, please re-enter.")
-            continue
-        break
-    
-    # Get input file path for internal model (cause analysis)
-    print("\n--- Internal Model Input (Cause Analysis) ---")
-    while True:
-        internal_data_path = input("Please enter the input data file path for Cause Analysis (Excel format): ").strip()
-        if not internal_data_path:
-            print("Path cannot be empty, please re-enter.")
-            continue
-        if not os.path.exists(internal_data_path):
-            print(f"File does not exist: {internal_data_path}, please re-enter.")
-            continue
-        if not internal_data_path.lower().endswith(('.xlsx', '.xls')):
-            print("Please provide an Excel file (.xlsx or .xls format)")
-            continue
-        break
-    
-    # Get model directory path for internal model
-    print("\n--- Internal Model Directory ---")
-    while True:
-        internal_model_dir = input("Please enter the INTERNAL model directory path (where the internal model .pkl files are saved): ").strip()
-        if not internal_model_dir:
-            print("Path cannot be empty, please re-enter.")
-            continue
-        if not os.path.exists(internal_model_dir):
-            print(f"Directory does not exist: {internal_model_dir}, please re-enter.")
-            continue
-        break
-    
-    # Get output directory path
-    while True:
-        results_path = input("Please enter the output results directory path (It is recommended to place it in the inference folder) (): ").strip()
-        if not results_path:
-            print("Path cannot be empty, please re-enter.")
-            continue
-        break
-    
-    return external_data_path, internal_data_path, external_model_dir, internal_model_dir, results_path
 
 def setup_directories(results_path):
     """Create output directory structure"""
@@ -1689,6 +1732,7 @@ def get_prediction_mode():
 
 def main():
     """Main function"""
+    apply_lang_from_cli()
     # Get user input paths
     external_data_path, internal_data_path, external_model_dir, internal_model_dir, results_path = get_user_paths()
     

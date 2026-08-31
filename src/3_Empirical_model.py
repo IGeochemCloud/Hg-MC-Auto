@@ -1,3 +1,4 @@
+import argparse
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -6,42 +7,109 @@ import os
 import json
 from scipy import stats as scipy_stats
 
+LANG = os.environ.get("HG_MC_AUTO_LANG", "zh").lower()
+
+TRANSLATIONS = {
+    "zh": {
+        "title": "数据分析与异常检测程序",
+        "input_data": "请输入输入数据文件路径（Excel 格式）: ",
+        "input_output": "请输入输出结果目录路径: ",
+        "path_empty": "路径不能为空，请重新输入。",
+        "not_exist": "文件不存在: {path}，请重新输入。",
+        "excel_required": "请提供 Excel 文件（.xlsx 或 .xls 格式）",
+        "mode_title": "分析模式选择",
+        "mode_prompt": "请选择分析模式 (1, 2, 或 3): ",
+        "mode1": "1. 经验模型（使用预定义范围）",
+        "mode2": "2. 自定义数据质量范围",
+        "mode3": "3. 使用上次自定义范围",
+        "invalid_mode": "无效选择。请输入 1、2 或 3。",
+        "config_title": "自定义数据质量范围配置",
+    },
+    "en": {
+        "title": "Data Analysis and Anomaly Detection Program",
+        "input_data": "Please enter the input data file path (Excel format): ",
+        "input_output": "Please enter the output results directory path: ",
+        "path_empty": "Path cannot be empty, please re-enter.",
+        "not_exist": "File does not exist: {path}, please re-enter.",
+        "excel_required": "Please provide an Excel file (.xlsx or .xls format)",
+        "mode_title": "Analysis Mode Selection",
+        "mode_prompt": "Please select analysis mode (1, 2, or 3): ",
+        "mode1": "1. Empirical Model (use predefined ranges)",
+        "mode2": "2. Custom Data Quality Ranges",
+        "mode3": "3. Use Last Custom Ranges",
+        "invalid_mode": "Invalid choice. Please enter 1, 2, or 3.",
+        "config_title": "Custom Data Quality Range Configuration",
+    },
+}
+
+
+def apply_lang_from_cli():
+    global LANG
+    parser = argparse.ArgumentParser(add_help=False)
+    parser.add_argument("--lang", choices=["zh", "en"], default=os.environ.get("HG_MC_AUTO_LANG", "zh"))
+    args, _ = parser.parse_known_args()
+    LANG = args.lang.lower()
+    os.environ["HG_MC_AUTO_LANG"] = LANG
+
+
+def text(key, **kwargs):
+    template = TRANSLATIONS.get(LANG, TRANSLATIONS["zh"]).get(key, key)
+    try:
+        return template.format(**kwargs)
+    except Exception:
+        return template
+
+
+def get_user_paths():
+    """Get input and output paths from user"""
+    print("=" * 60)
+    print(text("title"))
+    print("=" * 60)
+    
+    while True:
+        data_path = input(text("input_data")).strip()
+        if not data_path:
+            print(text("path_empty"))
+            continue
+        if not os.path.exists(data_path):
+            print(text("not_exist", path=data_path))
+            continue
+        if not data_path.lower().endswith(('.xlsx', '.xls')):
+            print(text("excel_required"))
+            continue
+        break
+    
+    while True:
+        results_path = input(text("input_output")).strip()
+        if not results_path:
+            print(text("path_empty"))
+            continue
+        break
+    
+    return data_path, results_path
+
+
+def get_analysis_mode():
+    """Let user select analysis mode"""
+    print("\n" + "=" * 60)
+    print(text("mode_title"))
+    print("=" * 60)
+    print(text("mode1"))
+    print(text("mode2"))
+    print(text("mode3"))
+    
+    while True:
+        choice = input(text("mode_prompt")).strip()
+        if choice in ['1', '2', '3']:
+            return choice
+        print(text("invalid_mode"))
+
 # Configuration file for custom ranges
 CUSTOM_RANGES_FILE = "custom_ranges_config.json"
 
 # Global variables to store configuration
 current_label_ranges = None
 current_internal_precision_ranges = None
-
-def get_user_paths():
-    """Get input and output paths from user"""
-    print("=" * 60)
-    print("Data Analysis and Anomaly Detection Program")
-    print("=" * 60)
-    
-    # Get input file path
-    while True:
-        data_path = input("Please enter the input data file path (Excel format): ").strip()
-        if not data_path:
-            print("Path cannot be empty, please re-enter.")
-            continue
-        if not os.path.exists(data_path):
-            print(f"File does not exist: {data_path}, please re-enter.")
-            continue
-        if not data_path.lower().endswith(('.xlsx', '.xls')):
-            print("Please provide an Excel file (.xlsx or .xls format)")
-            continue
-        break
-    
-    # Get output directory path
-    while True:
-        results_path = input("Please enter the output results directory path: ").strip()
-        if not results_path:
-            print("Path cannot be empty, please re-enter.")
-            continue
-        break
-    
-    return data_path, results_path
 
 def setup_directories(results_path):
     """Create output directory structure"""
@@ -55,22 +123,6 @@ def setup_directories(results_path):
     os.makedirs(table_path, exist_ok=True)
     
     return fig_path, report_path, table_path
-
-def get_analysis_mode():
-    """Let user select analysis mode"""
-    print("\n" + "=" * 60)
-    print("Analysis Mode Selection")
-    print("=" * 60)
-    print("1. Empirical Model (use predefined ranges)")
-    print("2. Custom Data Quality Ranges")
-    print("3. Use Last Custom Ranges")
-    
-    while True:
-        choice = input("Please select analysis mode (1, 2, or 3): ").strip()
-        if choice in ['1', '2', '3']:
-            return choice
-        else:
-            print("Invalid choice. Please enter 1, 2, or 3.")
 
 def save_custom_ranges(ranges):
     """Save custom ranges to configuration file"""
@@ -1130,6 +1182,7 @@ def process_abnormal_data(abnormal_file_path, table_path):
 
 def main():
     """Main function"""
+    apply_lang_from_cli()
     # Get analysis mode
     analysis_mode = get_analysis_mode()
     
