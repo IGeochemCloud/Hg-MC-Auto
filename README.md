@@ -2,7 +2,7 @@
 
 [![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![GitHub stars](https://img.shields.io/github/stars/Yoko286/Hg-MC-Auto)](https://github.com/Yoko286/Hg-MC-Auto/stargazers)
+[![GitHub stars](https://img.shields.io/github/stars/IGeochemCloud/Hg-MC-Auto)](https://github.com/IGeochemCloud/Hg-MC-Auto/stargazers)
 
 **Hg-MC-Auto** is a comprehensive, intelligent pipeline for automated mercury isotope analysis by MC-ICP-MS, integrating robotic data extraction, expert-informed quality control, and machine learning diagnostics. Online paper: https://doi.org/10.1039/D5JA00519A
 
@@ -47,24 +47,110 @@ cd Hg-MC-Auto
 ```
 ### 3. Create and activate a virtual environment
 ```bash
-python -m venv hg-auto-env
+python -m venv hg-mc-auto
 ```
 ### On Windows:
-```bash
-hg-auto-env\Scripts\activate
+```powershell
+hg-mc-auto\Scripts\activate
 ```
 ### On macOS/Linux:
 ```bash
-source hg-auto-env/bin/activate
+source hg-mc-auto/bin/activate
 ```
 ### 4. Install dependencies
 ```bash
+pip install --upgrade pip
 pip install -r requirements.txt
 ```
 ### 5. Run the application
 ```bash
 python src/main.py
 ```
+
+### 6. Use the Typer CLI
+The project now includes a polished Typer command line with platform and language support.
+
+```bash
+python src/main.py --help
+python src/main.py language --lang zh
+python src/main.py language --lang en
+python src/main.py platform
+python src/main.py export
+python src/main.py calculate
+python src/main.py empirical
+python src/main.py predict
+python src/main.py train --yes
+```
+
+Use `train-external` or `train-internal` to run only one training stage.
+
+## 🖥️ Windows / Linux / macOS installation and startup guide
+
+### Windows
+1. Open PowerShell or Command Prompt.
+2. Create a virtual environment:
+   ```powershell
+   cd Hg-MC-Auto
+   python -m venv hg-mc-auto
+   hg-mc-auto\Scripts\activate
+   ```
+3. Install the dependencies:
+   ```powershell
+   pip install --upgrade pip
+   pip install -r requirements.txt
+   ```
+4. Start the app:
+   ```powershell
+   python src/main.py
+   ```
+5. Optional CLI checks:
+   ```powershell
+   python src/main.py --help
+   python src/main.py platform
+   python src/main.py language --lang en
+   ```
+
+### Linux
+1. Open a terminal.
+2. Create a virtual environment:
+   ```bash
+   cd Hg-MC-Auto
+   python3 -m venv hg-mc-auto
+   source hg-mc-auto/bin/activate
+   ```
+3. Install dependencies:
+   ```bash
+   pip install --upgrade pip
+   pip install -r requirements.txt
+   ```
+4. Start the app:
+   ```bash
+   python src/main.py
+   ```
+5. If the export automation is used, make sure you are running on a desktop session with a valid `DISPLAY` environment variable.
+   ```bash
+   python src/main.py platform
+   ```
+
+### macOS
+1. Open Terminal.
+2. Create a virtual environment:
+   ```bash
+   cd Hg-MC-Auto
+   python3 -m venv hg-mc-auto
+   source hg-mc-auto/bin/activate
+   ```
+3. Install dependencies:
+   ```bash
+   pip install --upgrade pip
+   pip install -r requirements.txt
+   ```
+4. Start the app:
+   ```bash
+   python src/main.py
+   ```
+5. For automation workflows, run from a macOS desktop session so GUI operations can access the active application window.
+
 ## 🏗️ Architecture
 Hg-MC-Auto employs a three-tier architecture that transforms raw MC-ICP-MS data into quality-assured isotopic results:
 
@@ -124,7 +210,7 @@ Hg-MC-Auto/
 │   ├── 3_Empirical_model.py           # Expert rule-based classification
 │   ├── 4_ML_Predict.py                # ML model prediction interface
 │   ├── 5_Exter_ML_train.py            # Binary classifier training
-│   └── 6_Inter_ML_train.py            # Multi-class classifier training
+│   └── 6.Inter_ML_train.py            # Multi-class classifier training
 │
 ├── custom_ranges_config.json          # User-configurable acceptance ranges
 ├── mouse_coordinates.config           # RPA coordinate settings

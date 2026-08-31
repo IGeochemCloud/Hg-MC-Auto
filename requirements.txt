@@ -14,4 +14,7 @@ keyboard==0.13.5
 openpyxl==3.0.10
 Pillow==11.2.1
 statsmodels==0.13.2
-pywin32==310
+pywin32==310; platform_system == "Windows"
+pyobjc-core; platform_system == "Darwin"
+pyobjc-framework-quartz; platform_system == "Darwin"
+typer>=0.12,<1.0

@@ -11,16 +11,41 @@
 import os
 import time
 import json
-import pyautogui
-import pygetwindow as gw
 from datetime import datetime
-import pyperclip
 from dataclasses import dataclass, asdict, field
 from typing import List, Dict, Any, Optional, Tuple
-import keyboard
 import threading
 import fnmatch
 from pathlib import Path
+
+try:
+    import pyautogui
+    import pygetwindow as gw
+    import pyperclip
+    import keyboard
+except Exception as exc:  # pragma: no cover - platform-specific GUI dependency
+    pyautogui = None
+    gw = None
+    pyperclip = None
+    keyboard = None
+    _desktop_import_error = exc
+else:
+    _desktop_import_error = None
+
+
+def require_desktop_capabilities():
+    """Ensure GUI automation libraries are available before running export workflows."""
+    if pyautogui is None or gw is None or pyperclip is None or keyboard is None:
+        raise RuntimeError(
+            "Desktop automation is unavailable in this environment. "
+            "This usually means the system is running headless Linux without a GUI. "
+            "The export workflow requires a desktop session."
+        )
+
+
+def ensure_desktop_ready():
+    """Runtime guard for any GUI operation. Keeps Windows behavior intact and makes Linux headless mode explicit."""
+    require_desktop_capabilities()
 
 # ==================== 多语言支持 ====================
 class LanguageManager:
@@ -557,6 +582,7 @@ class CoordinateCapture:
     
     def capture_with_countdown(self, description, countdown_seconds=5):
         """带倒计时的坐标捕获"""
+        ensure_desktop_ready()
         print(f"\n{self.lang.t('coordinate_config')}")
         print(f"{description}")
         
@@ -589,6 +615,7 @@ class CoordinateCapture:
     
     def capture_instant(self, description):
         """即时坐标捕获"""
+        ensure_desktop_ready()
         print(f"\n{self.lang.t('coordinate_config')}")
         print(f"{description}")
         
@@ -1067,6 +1094,7 @@ class AutomationExecutor:
         
     def activate_window(self):
         """激活目标软件窗口"""
+        ensure_desktop_ready()
         if not self.profile.window_title:
             print(f"{self.lang.t('warning')}: {self.lang.t('window_title_not_set')}")
             input(f"{self.lang.t('manual_activate_prompt')}")
@@ -1184,6 +1212,7 @@ class AutomationExecutor:
     def _execute_single_export(self, input_file: str, output_file: str, 
                               variables: Dict[str, str]) -> bool:
         """执行单个文件的导出"""
+        ensure_desktop_ready()
         try:
             for i, action in enumerate(self.profile.actions, 1):
                 action_type = action.get("type")
@@ -1213,6 +1242,7 @@ class AutomationExecutor:
     
     def _execute_mouse_action(self, action: Dict, variables: Dict):
         """执行鼠标动作"""
+        ensure_desktop_ready()
         mouse_action = action.get("action", "click")
         coords = action.get("coordinates", [0, 0])
         
@@ -1233,6 +1263,7 @@ class AutomationExecutor:
     
     def _execute_keyboard_action(self, action: Dict, variables: Dict):
         """执行键盘动作"""
+        ensure_desktop_ready()
         kb_action = action.get("action", "press")
         
         if kb_action == "hotkey":
@@ -1255,6 +1286,7 @@ class AutomationExecutor:
     
     def _execute_clipboard_action(self, action: Dict, variables: Dict):
         """执行剪贴板动作"""
+        ensure_desktop_ready()
         action_type = action.get("action", "")
         content = action.get("content", "")
         
