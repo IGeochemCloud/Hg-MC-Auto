@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hg-mc-auto"
+version = "0.1.0"
+description = "Element-aware automation toolkit for isotope analysis workflows."
+readme = "README.md"
+requires-python = ">=3.9"
+authors = [{ name = "IGeochemCloud" }]
+license = { text = "MIT" }
+keywords = ["isotope", "mc-icp-ms", "automation", "mcp", "agent"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+]
+
+[project.optional-dependencies]
+ml = ["scikit-learn>=1.6", "xgboost>=2.1", "joblib>=1.2"]
+mcp = ["mcp>=1.0"]
+release = ["build>=1.2", "twine>=5.0"]
+
+[project.urls]
+Homepage = "https://github.com/IGeochemCloud/Hg-MC-Auto"
+Repository = "https://github.com/IGeochemCloud/Hg-MC-Auto"
+Issues = "https://github.com/IGeochemCloud/Hg-MC-Auto/issues"
+
+[project.scripts]
+hgmc = "hg_mc_auto.cli:app"
+hg-mc-auto = "hg_mc_auto.cli:app"
+hgmc-release = "hg_mc_auto.release:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]

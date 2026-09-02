@@ -1,212 +1,226 @@
-# Hg-MC-Auto: An End-to-End Self-Driving Pipeline for Mercury Isotope Analysis
+# Hg-MC-Auto
 
-[![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://www.python.org/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![GitHub stars](https://img.shields.io/github/stars/IGeochemCloud/Hg-MC-Auto)](https://github.com/IGeochemCloud/Hg-MC-Auto/stargazers)
+Hg-MC-Auto is an element-aware automation toolkit for isotope analysis workflows, with bilingual CLI support, agent-facing MCP tooling, and cross-platform Python packaging.
+![alt text](<docs/Graphic abstract.png>)
 
-**Hg-MC-Auto** is a comprehensive, intelligent pipeline for automated mercury isotope analysis by MC-ICP-MS, integrating robotic data extraction, expert-informed quality control, and machine learning diagnostics. Online paper: https://doi.org/10.1039/D5JA00519A
-
-![Graphic Abstract](https://github.com/Yoko286/Hg-MC-Auto/blob/main/docs/Graphic%20abstract.png)
-
-## ✨ Features
-
-- **Automated Data Processing**: Robotic export from proprietary software to structured formats
-- **Intelligent Quality Control**: Hierarchical ML models with 99.6% F1-score accuracy
-- **Root Cause Diagnosis**: Multi-class classification for anomaly identification
-- **User-Friendly Interface**: Interactive GUI with configurable options
-- **Scalable Framework**: Modular design for extension to other isotope systems
-- **Expert-Validated**: Built on 26,000+ historical MC-ICP-MS measurements
-
-## 📋 Table of Contents
-
-1. [Installation](https://github.com/Yoko286/Hg-MC-Auto?tab=readme-ov-file#-installation)
-2. [Architecture](https://github.com/Yoko286/Hg-MC-Auto?tab=readme-ov-file#%EF%B8%8F-architecture)
-3. [Project Structure](https://github.com/Yoko286/Hg-MC-Auto?tab=readme-ov-file#-project-structure)
-4. [Usage Guide](https://github.com/Yoko286/Hg-MC-Auto?tab=readme-ov-file#-usage-guide)
-5. [Models](https://github.com/Yoko286/Hg-MC-Auto?tab=readme-ov-file#-models)
-6. [Citation](https://github.com/Yoko286/Hg-MC-Auto?tab=readme-ov-file#-citation)
-7. [Contact](https://github.com/Yoko286/Hg-MC-Auto?tab=readme-ov-file#-contact)
-
-## 🚀 Installation
-
-**Prerequisites**
-- Python 3.9 or higher
-- 8GB RAM minimum (16GB recommended for large datasets)
-- MC-ICP-MS raw data files (.dat and .log formats)
-
-**Step-by-Step Setup**
+- [A data-driven, post-acquisition quality diagnostic pipeline for isotope analysis by MC-ICP-MS](https://pubs.rsc.org/ja/article-abstract/41/5/1894/1230352/A-data-driven-post-acquisition-quality-diagnostic?redirectedFrom=fulltext)
 
 
-### 1. Clone the repository
-```bash
-git clone https://github.com/Yoko286/Hg-MC-Auto.git
-```
-### 2. Navigate to the project directory
-```bash
-cd Hg-MC-Auto
-```
-### 3. Create and activate a virtual environment
+## Quick summary
+
+- User-ready package: `pip install hg-mc-auto`
+- CLI entry points: `hgmc` and `hg-mc-auto`
+- Supported elements: `hg`, `fe`, `cd`
+- Platforms: Windows, Linux, macOS
+- Release flow: `hgmc-release` and `hgmc release`
+
+---
+
+## 1) User guide
+
+### Install
+
 ```bash
 python -m venv hg-mc-auto
-```
-### On Windows:
-```powershell
-hg-mc-auto\Scripts\activate
-```
-### On macOS/Linux:
-```bash
 source hg-mc-auto/bin/activate
-```
-### 4. Install dependencies
-```bash
 pip install --upgrade pip
+pip install hg-mc-auto
+```
+
+On Windows PowerShell:
+
+```powershell
+python -m venv hg-mc-auto
+hg-mc-auto\Scripts\activate
+pip install --upgrade pip
+pip install hg-mc-auto
+```
+
+### Start the app
+
+```bash
+hgmc
+```
+
+Or:
+
+```bash
+hg-mc-auto
+```
+
+### Common CLI commands
+
+```bash
+hgmc --help
+hgmc list-elements
+hgmc workflow --element fe
+hgmc run --element fe --task export --language zh
+hgmc language --lang en
+hgmc platform
+hgmc project-summary
+```
+
+### Install with MCP support
+
+```bash
+pip install "hg-mc-auto[mcp]"
+hgmc mcp --action status
+```
+
+### Notes
+
+- If you only need normal usage, `pip install hg-mc-auto` is enough.
+- `hgmc` is the recommended command for end users.
+- `python src/main.py` remains available for legacy local development workflows.
+
+---
+
+## 2) Developer guide
+
+### Clone and set up the repo
+
+```bash
+git clone https://github.com/IGeochemCloud/Hg-MC-Auto.git
+cd Hg-MC-Auto
+python -m venv hg-mc-auto
+source hg-mc-auto/bin/activate
+pip install --upgrade pip
+pip install -e .
 pip install -r requirements.txt
 ```
-### 5. Run the application
-```bash
-python src/main.py
-```
 
-### 6. Use the Typer CLI
-The project now includes a polished Typer command line with platform and language support.
+### Run tests
 
 ```bash
-python src/main.py --help
-python src/main.py language --lang zh
-python src/main.py language --lang en
-python src/main.py platform
-python src/main.py export
-python src/main.py calculate
-python src/main.py empirical
-python src/main.py predict
-python src/main.py train --yes
+PYTHONPATH=. python -m unittest tests.test_main_cli -v
 ```
 
-Use `train-external` or `train-internal` to run only one training stage.
+### CLI development
 
-## 🖥️ Windows / Linux / macOS installation and startup guide
+```bash
+hgmc --help
+hgmc list-elements
+hgmc workflow --element fe
+hgmc run --element cd --task export --language en
+```
 
-### Windows
-1. Open PowerShell or Command Prompt.
-2. Create a virtual environment:
-   ```powershell
-   cd Hg-MC-Auto
-   python -m venv hg-mc-auto
-   hg-mc-auto\Scripts\activate
-   ```
-3. Install the dependencies:
-   ```powershell
-   pip install --upgrade pip
-   pip install -r requirements.txt
-   ```
-4. Start the app:
-   ```powershell
-   python src/main.py
-   ```
-5. Optional CLI checks:
-   ```powershell
-   python src/main.py --help
-   python src/main.py platform
-   python src/main.py language --lang en
-   ```
+### MCP development
 
-### Linux
-1. Open a terminal.
-2. Create a virtual environment:
-   ```bash
-   cd Hg-MC-Auto
-   python3 -m venv hg-mc-auto
-   source hg-mc-auto/bin/activate
-   ```
-3. Install dependencies:
-   ```bash
-   pip install --upgrade pip
-   pip install -r requirements.txt
-   ```
-4. Start the app:
-   ```bash
-   python src/main.py
-   ```
-5. If the export automation is used, make sure you are running on a desktop session with a valid `DISPLAY` environment variable.
-   ```bash
-   python src/main.py platform
-   ```
+```bash
+hgmc mcp --action status
+hgmc mcp --action tools
+hgmc mcp --action json
+hgmc mcp --action stdio
+```
 
-### macOS
-1. Open Terminal.
-2. Create a virtual environment:
-   ```bash
-   cd Hg-MC-Auto
-   python3 -m venv hg-mc-auto
-   source hg-mc-auto/bin/activate
-   ```
-3. Install dependencies:
-   ```bash
-   pip install --upgrade pip
-   pip install -r requirements.txt
-   ```
-4. Start the app:
-   ```bash
-   python src/main.py
-   ```
-5. For automation workflows, run from a macOS desktop session so GUI operations can access the active application window.
+The stdio action is intended for agent/IDE integrations. It is compatible with the installed `mcp` 2.x API and exposes the project’s tool surface over standard input/output.
 
-## 🏗️ Architecture
-Hg-MC-Auto employs a three-tier architecture that transforms raw MC-ICP-MS data into quality-assured isotopic results:
+### Release flow
 
-![Overall Architecture Diagram](https://github.com/Yoko286/Hg-MC-Auto/blob/main/docs/Overall%20Architecture%20Diagram.png)
+```bash
+hgmc release --action check
+hgmc release --action build
+hgmc release --action publish
+hgmc release --action sync --version 0.1.1 --message "release 0.1.1"
+```
 
-Core Components
-Data Automation Layer
+Direct script form:
 
-Robotic Process Automation (RPA) for data extraction
+```bash
+hgmc-release check
+hgmc-release build
+hgmc-release publish
+hgmc-release sync --version 0.1.1 --message "release 0.1.1"
+```
 
-Automated file conversion and merging
+### PyPI publishing
 
-Batch processing of historical data
+```bash
+python -m build
+python -m twine upload dist/*
+```
 
-Intelligence Layer
+Set `PYPI_TOKEN` before publishing if you are using automation.
 
-Expert rule-based filtering
+---
 
-Ensemble machine learning models
+## 3) Project structure
 
-Hierarchical anomaly detection
+![alt text](<docs/Overall Architecture Diagram.png>)
 
-Application Layer
-
-Interactive graphical interface
-
-Configurable quality thresholds
-
-Comprehensive reporting
-
-## 📁 Project Structure
 ```bash
 Hg-MC-Auto/
-│
-├── data/                     # Sample datasets for testing
-│   ├── train dataset.xlsx             # Contact my email to get: zhouchufan@mail.gyig.ac.cn
-│   └── validation dataset.xlsx        # Model validation dataset
-│
-├── docs/                     # Documentation and figures
-│
-├── model/                    # Pre-trained ML models
-│   ├── Exter_ML_model/      # Binary classification models
-│   │   ├── top3_model_1_Random_Forest_SMOTE.pkl
-│   │   ├── top3_model_2_Bagging_RF_UnderSampling.pkl
-│   │   └── top3_model_3_XGBoost_UnderSampling.pkl
-│   │
-│   └── Inter_ML_model/      # Multi-class diagnostic models
-│       ├── Basic_features/  # Core feature-based model
-│       └── Enhanced_features/ # Advanced feature-based model
-│
-├── results/                  # Output directory for analysis results
-│
-├── src/                      # Source code
-│   ├── main.py              # Main application entry point
-│   ├── 1_Automatic_export.py          # Data export automation
-│   ├── 2_Automatic_calculation.py     # Isotope ratio calculation
+├── src/
+│   ├── main.py
+│   ├── hg_mc_auto/
+│   │   ├── cli.py
+│   │   ├── mcp_server.py
+│   │   ├── release.py
+│   │   ├── core/
+│   │   └── ...
+│   └── ...
+├── tests/
+├── docs/
+├── data/
+├── model/
+├── results/
+├── pyproject.toml
+├── requirements.txt
+├── README.md
+├── LICENSE
+└── .gitignore
+```
+
+---
+
+## 4) Platform notes
+
+### Windows
+
+```powershell
+python -m venv hg-mc-auto
+hg-mc-auto\Scripts\activate
+pip install -e .
+hgmc --help
+```
+
+### Linux
+
+```bash
+python3 -m venv hg-mc-auto
+source hg-mc-auto/bin/activate
+pip install -e .
+hgmc --help
+```
+
+### macOS
+
+```bash
+python3 -m venv hg-mc-auto
+source hg-mc-auto/bin/activate
+pip install -e .
+hgmc --help
+```
+
+---
+
+## 5) Release status
+
+This project is currently in a release-oriented v0.1.0 state with:
+
+- bilingual CLI support
+- generalized element routing for `hg`, `fe`, and `cd`
+- agent-oriented MCP tooling
+- PyPI packaging support
+- Windows / Linux / macOS compatibility notes
+
+---
+
+## 6) Citation and contact
+
+If you use this project in published work, please cite the project and associated manuscript as appropriate for your workflow and repository policy.
+
+For development questions or collaboration, use the repository issue tracker or project maintainer contact listed in the upstream project metadata.
 │   ├── 3_Empirical_model.py           # Expert rule-based classification
 │   ├── 4_ML_Predict.py                # ML model prediction interface
 │   ├── 5_Exter_ML_train.py            # Binary classifier training

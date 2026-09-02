@@ -2,8 +2,15 @@ import os
 import platform
 import subprocess
 import sys
+from pathlib import Path
 
 import typer
+
+SRC_ROOT = Path(__file__).resolve().parent
+if str(SRC_ROOT) not in sys.path:
+    sys.path.insert(0, str(SRC_ROOT))
+
+from hg_mc_auto.core import REGISTRY, build_workflow_context
 
 
 app = typer.Typer(
@@ -348,6 +355,92 @@ def platform_support():
         typer.echo("Note: GUI automation is supported on macOS desktop sessions.")
     elif current == "Windows":
         typer.echo("Note: GUI automation is supported on Windows desktop sessions.")
+
+
+@app.command("list-elements")
+def list_elements_command() -> None:
+    """List supported elements in the registry."""
+    typer.echo("Supported elements:")
+    for name in REGISTRY.list():
+        spec = REGISTRY.get(name)
+        typer.echo(f"- {name}: {spec.display_name if spec else name}")
+
+
+@app.command("show-element")
+def show_element_command(
+    name: str = typer.Argument(..., help="Element name such as hg, fe, cd."),
+) -> None:
+    """Display the metadata for a single element."""
+    try:
+        info = REGISTRY.info(name)
+    except KeyError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(code=1)
+
+    for key, value in info.items():
+        typer.echo(f"{key}: {value}")
+
+
+@app.command("context")
+def context_command(
+    element: str = typer.Option("hg", "--element", help="Element name to use for workflow context."),
+    language: str = typer.Option("en", "--language", help="Language code such as en or zh."),
+) -> None:
+    """Build a workflow context object for an element."""
+    context = build_workflow_context(element=element, language=language)
+    typer.echo(f"element={context.element}")
+    typer.echo(f"language={context.language}")
+
+
+@app.command("workflow")
+def workflow_command(
+    element: str = typer.Option("hg", "--element", help="Element whose workflow metadata should be shown."),
+) -> None:
+    """Display the supported tasks and default workflow for a registered element."""
+    try:
+        workflow = resolve_workflow_for_element(element)
+    except KeyError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(code=1)
+
+    typer.echo(f"element={workflow['element']}")
+    typer.echo(f"display_name={workflow['display_name']}")
+    typer.echo(f"description={workflow['description']}")
+    typer.echo(f"tasks={workflow['tasks']}")
+    typer.echo(f"default_task={workflow['default_task']}")
+    typer.echo(f"extensions={workflow['extensions']}")
+
+
+@app.command("run")
+def run_command(
+    element: str = typer.Option("hg", "--element", "-e", help="Element to execute, such as hg, fe, or cd."),
+    task: str = typer.Option("export", "--task", "-t", help="Element task to dispatch."),
+    language: str = typer.Option("en", "--language", "-l", help="UI language code such as en or zh."),
+    data_path: str | None = typer.Option(None, "--data-path", help="Optional data path for the selected task."),
+    output_dir: str | None = typer.Option(None, "--output-dir", help="Optional output directory for result files."),
+) -> None:
+    """Dispatch a supported task for a registered element."""
+    try:
+        workflow = resolve_workflow_for_element(element)
+    except KeyError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(code=1)
+
+    if task not in workflow["tasks"]:
+        typer.echo(f"Task '{task}' is not supported for element '{element}'. Supported tasks: {workflow['tasks']}")
+        raise typer.Exit(code=1)
+
+    routed = resolve_element_task(element, task)
+    typer.echo(f"Element: {workflow['display_name']}")
+    typer.echo(f"Task: {task}")
+    typer.echo(f"Script: {routed['script']}")
+    typer.echo(f"Language: {language}")
+    if data_path:
+        typer.echo(f"Data path: {data_path}")
+    if output_dir:
+        typer.echo(f"Output directory: {output_dir}")
+
+    typer.echo("Dispatch ready for execution.")
 
 
 if __name__ == "__main__":
