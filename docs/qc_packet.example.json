@@ -1,0 +1,26 @@
+{
+  "element": "hg",
+  "run_id": "mc-icp-ms-2026-09-08-001",
+  "metrics": {
+    "internal_precision": 0.12,
+    "data_quality_score": 0.42,
+    "standard_drift": 0.18,
+    "blank_signal": 0.03
+  },
+  "results": {
+    "delta202": -0.8,
+    "delta201": 0.1
+  },
+  "flags": [
+    {
+      "code": "LOW_QUALITY_SCORE",
+      "severity": "warning",
+      "message": "Data quality score is below the review threshold.",
+      "source": "rule",
+      "evidence": {
+        "threshold": 0.5,
+        "value": 0.42
+      }
+    }
+  ]
+}

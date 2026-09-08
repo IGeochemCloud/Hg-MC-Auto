@@ -60,6 +60,39 @@ hgmc platform
 hgmc project-summary
 ```
 
+### Structured QC and optional LLM interpretation
+
+The QC assistant accepts structured metrics, results, and anomaly flags. It does
+not send raw instrument files by default, and an LLM response is advisory only:
+the result remains `pending_human_review`.
+
+```bash
+hgmc qc --input docs/qc_packet.example.json
+```
+
+For a near-real-time, read-only directory monitor, point the command at the
+directory where the calculation or prediction workflow writes result files:
+
+```bash
+hgmc monitor --directory results --element hg --once
+```
+
+Remove `--once` to keep polling. The monitor emits a `qc.v1` packet when a JSON,
+CSV, or Excel result file is created or modified. It does not change instrument
+settings or automatically approve a recommendation.
+
+To request an interpretation through an OpenAI-compatible provider such as
+OrcaRouter, set the provider key first:
+
+```bash
+export ORCA_KEY="your-key"
+hgmc qc --input docs/qc_packet.example.json --llm --language zh
+```
+
+The assistant can explain quality signals, rank plausible causes, and suggest
+checks. It must not directly change instrument parameters or start an
+instrument run.
+
 ### Install with MCP support
 
 ```bash
@@ -115,6 +148,10 @@ hgmc mcp --action stdio
 
 The stdio action is intended for agent/IDE integrations. It is compatible with the installed `mcp` 2.x API and exposes the project’s tool surface over standard input/output.
 
+The MCP layer can later expose the same structured QC packet and advisory
+assessment to an agent. Keep the human approval step outside the model: an
+agent may prepare a review, but a qualified operator confirms any action.
+
 ### Release flow
 
 ```bash
@@ -141,6 +178,19 @@ python -m twine upload dist/*
 ```
 
 Set `PYPI_TOKEN` before publishing if you are using automation.
+
+### OrcaRouter open-source maintainer application
+
+The project can apply through [OrcaRouter Built With](https://www.orcarouter.ai/zh-CN/built-with).
+The page currently states that the repository must be public, owned by the
+applicant, and contain commits from the applicant's GitHub account; approval is
+manual. Listing is attribution and support, not an endorsement or an exclusive
+provider agreement. Other model providers can remain supported.
+
+Before applying, publish the repository and make the project description clear:
+structured MC-ICP-MS QC, bilingual workflow support, MCP integration, and
+human-confirmed recommendations. Do not include API keys, raw laboratory data,
+or private instrument credentials in the repository.
 
 ---
 
@@ -212,6 +262,8 @@ This project is currently in a release-oriented v0.1.0 state with:
 - generalized element routing for `hg`, `fe`, and `cd`
 - agent-oriented MCP tooling
 - PyPI packaging support
+- structured QC packets with advisory LLM interpretation
+- mandatory human confirmation before operational action
 - Windows / Linux / macOS compatibility notes
 
 ---

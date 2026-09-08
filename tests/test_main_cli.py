@@ -19,6 +19,8 @@ class TestMainCli(unittest.TestCase):
         self.assertIn("context", command_names)
         self.assertIn("mcp", command_names)
         self.assertIn("release", command_names)
+        self.assertIn("qc", command_names)
+        self.assertIn("monitor", command_names)
 
     def test_fe_workflow_is_registered(self):
         workflow = resolve_workflow_for_element("fe")

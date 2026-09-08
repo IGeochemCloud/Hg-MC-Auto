@@ -165,6 +165,56 @@ def project_summary() -> None:
     typer.echo("mcp_ready: true")
 
 
+@app.command("qc")
+def quality_control_command(
+    input_path: Path = typer.Option(..., "--input", "-i", exists=True, readable=True, help="JSON file with element, run_id, metrics, results, and flags."),
+    output_path: Path | None = typer.Option(None, "--output", "-o", help="Optional JSON output path."),
+    request_llm: bool = typer.Option(False, "--llm", help="Request advisory LLM interpretation after packet creation."),
+    language: str = typer.Option("en", "--language", "-l", help="Assessment language: en or zh."),
+    model: str = typer.Option("orcarouter/auto", "--model", help="OpenAI-compatible model identifier."),
+) -> None:
+    """Create a structured QC packet and optionally request advisory interpretation."""
+    from hg_mc_auto.quality_control import packet_from_result_file, request_llm_assessment
+
+    try:
+        packet = packet_from_result_file(input_path)
+        payload = packet.to_dict()
+        if request_llm:
+            payload["llm_assessment"] = request_llm_assessment(
+                packet,
+                model=model,
+                language=language,
+            )
+    except (KeyError, json.JSONDecodeError, OSError, ValueError, RuntimeError) as exc:
+        typer.echo(f"QC processing failed: {exc}", err=True)
+        raise typer.Exit(code=1)
+
+    rendered = json.dumps(payload, ensure_ascii=False, indent=2)
+    if output_path:
+        output_path.write_text(rendered + "\n", encoding="utf-8")
+        typer.echo(f"QC output written to {output_path}")
+    else:
+        typer.echo(rendered)
+
+
+@app.command("monitor")
+def monitor_command(
+    directory: Path = typer.Option(..., "--directory", "-d", exists=True, file_okay=False, readable=True),
+    element: str = typer.Option("hg", "--element", "-e"),
+    interval: float = typer.Option(2.0, "--interval", min=0.1),
+    once: bool = typer.Option(False, "--once", help="Scan once and exit."),
+) -> None:
+    """Monitor a result directory and emit structured QC packets as JSON."""
+    from hg_mc_auto.monitor import monitor_results
+
+    try:
+        for packet in monitor_results(directory, element=element, interval=interval, once=once):
+            typer.echo(packet.to_json())
+    except (OSError, ValueError, RuntimeError) as exc:
+        typer.echo(f"Monitoring failed: {exc}", err=True)
+        raise typer.Exit(code=1)
+
+
 @app.command("mcp")
 def mcp_command(
     action: str = typer.Option("status", "--action", "-a", help="Action: status, tools, json, stdio."),
