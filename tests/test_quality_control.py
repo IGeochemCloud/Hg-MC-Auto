@@ -9,7 +9,8 @@ from hg_mc_auto.quality_control import (
     normalize_qc_result,
     validate_llm_assessment,
 )
-from hg_mc_auto.monitor import changed_result_files
+from hg_mc_auto.monitor import changed_result_files, monitor_results
+from hg_mc_auto.export_monitor import wait_for_stable_file
 
 
 class TestQualityControl(unittest.TestCase):
@@ -79,6 +80,30 @@ class TestQualityControl(unittest.TestCase):
             seen = {}
             self.assertEqual(changed_result_files(directory, seen), [path])
             self.assertEqual(changed_result_files(directory, seen), [])
+
+    def test_monitor_emits_qc_packet_for_completed_result(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "result.json"
+            path.write_text(json.dumps({
+                "Data_Quality_Score": 0.8,
+                "ML_Predicted_Cause": "normal",
+            }), encoding="utf-8")
+            packets = list(monitor_results(directory, element="hg", once=True))
+
+        self.assertEqual(len(packets), 1)
+        self.assertEqual(packets[0].run_id, "result")
+        self.assertEqual(packets[0].metrics["data_quality_score"], 0.8)
+
+    def test_export_monitor_waits_for_nonempty_stable_output(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "export.csv"
+            path.write_text("header,value\n", encoding="utf-8")
+            self.assertTrue(wait_for_stable_file(path, timeout=1, poll_interval=0.01, stable_samples=2))
+
+    def test_export_monitor_times_out_when_output_is_missing(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "missing.csv"
+            self.assertFalse(wait_for_stable_file(path, timeout=0.03, poll_interval=0.01, stable_samples=2))
 
 
 if __name__ == "__main__":

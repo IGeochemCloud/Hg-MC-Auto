@@ -12,6 +12,7 @@ class ElementSpec:
     default_workflow: str = "default"
     supported_tasks: List[str] = field(default_factory=list)
     default_extensions: tuple[str, ...] = (".dat", ".log", ".csv", ".xlsx")
+    support_status: str = "planned"
     metadata: Dict[str, object] = field(default_factory=dict)
 
 
@@ -45,6 +46,7 @@ class ElementRegistry:
             "default_workflow": spec.default_workflow,
             "tasks": spec.supported_tasks,
             "extensions": list(spec.default_extensions),
+            "support_status": spec.support_status,
             "metadata": spec.metadata,
         }
 
@@ -59,6 +61,7 @@ REGISTRY.register_many(
             default_workflow="default",
             supported_tasks=["export", "calculate", "empirical", "predict", "train"],
             default_extensions=(".dat", ".log", ".csv", ".xlsx"),
+            support_status="production",
             metadata={"family": "mercury", "legacy": True},
         ),
         ElementSpec(
@@ -68,6 +71,7 @@ REGISTRY.register_many(
             default_workflow="default",
             supported_tasks=["export", "calculate", "predict"],
             default_extensions=(".dat", ".csv", ".xlsx"),
+            support_status="scaffold",
             metadata={"family": "iron", "legacy": False},
         ),
         ElementSpec(
@@ -77,6 +81,7 @@ REGISTRY.register_many(
             default_workflow="default",
             supported_tasks=["export", "calculate", "predict"],
             default_extensions=(".dat", ".csv", ".xlsx"),
+            support_status="scaffold",
             metadata={"family": "cadmium", "legacy": False},
         ),
     ]

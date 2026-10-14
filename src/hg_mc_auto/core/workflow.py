@@ -56,6 +56,7 @@ def resolve_workflow_for_element(element: str) -> Dict[str, Any]:
         "default_task": base["default_task"],
         "description": base["description"],
         "extensions": list(spec.default_extensions),
+        "support_status": spec.support_status,
     }
 
 

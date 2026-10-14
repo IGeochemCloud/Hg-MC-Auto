@@ -43,6 +43,7 @@ class MCPServer:
             "run_agent_plan",
             "list_platforms",
             "project_summary",
+            "create_qc_packet",
         ]
 
     def run_element_task(
@@ -98,25 +99,39 @@ except ImportError:
 else:
     mcp_app = MCPServerImpl("hg-mc-auto", version="0.1.0", description="Hg-MC-Auto MCP integration")
 
-    @mcp_app.tool()
+    @mcp_app.tool(name="list_elements", description="List registered isotope elements and their support maturity.")
     def list_elements_tool() -> list[str]:
         return server.list_elements()
 
-    @mcp_app.tool()
+    @mcp_app.tool(name="get_element_info", description="Get metadata, supported tasks, and maturity for an element.")
     def get_element_info_tool(name: str) -> dict[str, Any]:
         return server.get_element_info(name)
 
-    @mcp_app.tool()
+    @mcp_app.tool(name="resolve_workflow", description="Resolve an element workflow and its supported tasks.")
     def resolve_workflow_tool(element: str) -> dict[str, Any]:
         return server.resolve_workflow(element)
 
-    @mcp_app.tool()
+    @mcp_app.tool(name="run_element_task", description="Resolve a task route. This currently reports the target script; it does not launch the scientific workflow.")
     def run_element_task_tool(element: str, task: str, language: str = "en") -> dict[str, Any]:
         return server.run_element_task(element, task, language=language)
 
-    @mcp_app.tool()
+    @mcp_app.tool(name="run_agent_plan", description="Build an ordered task plan for a registered element; does not execute instrument operations.")
+    def run_agent_plan_tool(element: str, tasks: list[str], language: str = "en") -> dict[str, Any]:
+        return server.run_agent_plan(element, tasks, language=language)
+
+    @mcp_app.tool(name="list_platforms", description="List supported operating systems.")
+    def list_platforms_tool() -> list[str]:
+        return server.list_platforms()
+
+    @mcp_app.tool(name="project_summary", description="Return project version, supported elements, and platform summary.")
     def project_summary_tool() -> dict[str, Any]:
         return server.project_summary()
+
+    @mcp_app.tool(name="create_qc_packet", description="Create a structured, human-review-required QC packet from a JSON, CSV, or Excel result file.")
+    def create_qc_packet_tool(path: str, element: str = "hg") -> dict[str, Any]:
+        from hg_mc_auto.quality_control import packet_from_result_file
+
+        return packet_from_result_file(path, element=element).to_dict()
 
     def run_stdio_server() -> None:
         asyncio.run(mcp_app.run_stdio_async())

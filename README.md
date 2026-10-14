@@ -58,7 +58,13 @@ hgmc run --element fe --task export --language zh
 hgmc language --lang en
 hgmc platform
 hgmc project-summary
+hgmc guide --element hg --language zh
 ```
+
+Use `hgmc list-elements` to check maturity. At present, Hg is the production
+legacy workflow; Fe and Cd are scaffolds, not validated element-specific
+analytical pipelines. The generic `run` command resolves task metadata and must
+not be mistaken for executing a complete scientific workflow for every element.
 
 ### Structured QC and optional LLM interpretation
 
@@ -100,6 +106,24 @@ pip install "hg-mc-auto[mcp]"
 hgmc mcp --action status
 ```
 
+### Connect this checkout to VS Code Agent
+
+When opening this repository as the VS Code workspace, it includes
+`.vscode/mcp.json`. Run **MCP: List Servers**, select `hg-mc-auto`, then start
+the server. In Chat, choose Agent mode and enable the server's tools. If VS Code
+does not discover the configuration, run **Developer: Reload Window** and
+inspect **MCP: Show Installed Servers**.
+
+The workspace configuration uses the repository-local virtual environment. If
+you moved or renamed that environment, update the command in `.vscode/mcp.json`.
+
+Try asking the Agent: “Use Hg-MC-Auto MCP to list the supported elements and
+explain the Hg workflow.” It should call `list_elements` and `resolve_workflow`.
+
+Current tools provide metadata, workflow routing, plans, and structured QC
+packet creation. In particular, `run_element_task` only resolves the target
+script; it does not execute Evaluation GUI automation or control the instrument.
+
 ### Notes
 
 - If you only need normal usage, `pip install hg-mc-auto` is enough.
@@ -136,6 +160,10 @@ hgmc list-elements
 hgmc workflow --element fe
 hgmc run --element cd --task export --language en
 ```
+
+See [docs/ELEMENT_EXPANSION.md](docs/ELEMENT_EXPANSION.md) for reviewed
+MC-ICP-MS method references, element support gates, and the proposed plugin
+contract.
 
 ### MCP development
 

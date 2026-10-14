@@ -46,7 +46,8 @@ def list_elements() -> None:
     typer.echo("Supported elements:")
     for name in REGISTRY.list():
         spec = REGISTRY.get(name)
-        typer.echo(f"- {name}: {spec.display_name if spec else name}")
+        status = spec.support_status if spec else "unknown"
+        typer.echo(f"- {name}: {spec.display_name if spec else name} [{status}]")
 
 
 @app.command("show-element")
@@ -87,6 +88,7 @@ def workflow_command(
     typer.echo(f"display_name={workflow['display_name']}")
     typer.echo(f"description={workflow['description']}")
     typer.echo(f"tasks={workflow['tasks']}")
+    typer.echo(f"support_status={workflow['support_status']}")
     typer.echo(f"default_task={workflow['default_task']}")
     typer.echo(f"extensions={workflow['extensions']}")
 
@@ -163,6 +165,46 @@ def project_summary() -> None:
     typer.echo("platforms: windows, linux, macos")
     typer.echo("bilingual: true")
     typer.echo("mcp_ready: true")
+
+
+@app.command("guide")
+def user_guide(
+    element: str = typer.Option("hg", "--element", "-e", help="Element workflow to explain."),
+    language: str = typer.Option("zh", "--language", "-l", help="Guide language: zh or en."),
+) -> None:
+    """Show a beginner-friendly, honest workflow overview."""
+    try:
+        workflow = resolve_workflow_for_element(element)
+    except KeyError as exc:
+        typer.echo(str(exc), err=True)
+        raise typer.Exit(code=1)
+
+    is_chinese = language.lower() in {"zh", "cn", "zh-cn"}
+    if workflow["support_status"] != "production":
+        if is_chinese:
+            typer.echo(f"{workflow['display_name']} 目前是实验性脚手架，尚无可供实验室验证的完整元素专属分析方法。")
+            typer.echo("建议先查看 docs/ELEMENT_EXPANSION.md，并不要将通用路由结果解释为已验证的科学结果。")
+        else:
+            typer.echo(f"{workflow['display_name']} is currently a scaffold; no complete element-specific method has been validated in this package.")
+            typer.echo("See docs/ELEMENT_EXPANSION.md. Generic routing is not a validated scientific result.")
+        return
+
+    if is_chinese:
+        typer.echo("Hg 常规流程（每一步都可单独运行和检查）：")
+        typer.echo("1. 从仪器软件导出原始数据：hgmc export")
+        typer.echo("2. 汇总参数并计算同位素分馏：hgmc calculate")
+        typer.echo("3. 选择经验模型或机器学习诊断：hgmc empirical 或 hgmc predict")
+        typer.echo("4. 对预测/计算结果生成结构化质控包：hgmc qc --input <结果文件>")
+        typer.echo("5. 可选监测结果目录：hgmc monitor --directory <结果目录> --once")
+        typer.echo("LLM 解读是可选建议；仪器操作和结论确认由实验人员负责。")
+    else:
+        typer.echo("Hg routine workflow (each step can be run and checked independently):")
+        typer.echo("1. Export from instrument software: hgmc export")
+        typer.echo("2. Merge parameters and calculate fractionation: hgmc calculate")
+        typer.echo("3. Choose empirical or ML diagnostics: hgmc empirical or hgmc predict")
+        typer.echo("4. Create a structured QC packet: hgmc qc --input <result-file>")
+        typer.echo("5. Optionally monitor a result folder: hgmc monitor --directory <result-dir> --once")
+        typer.echo("LLM output is advisory; operators retain responsibility for decisions and instrument actions.")
 
 
 @app.command("qc")

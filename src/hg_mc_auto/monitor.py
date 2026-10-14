@@ -4,6 +4,7 @@ import time
 from pathlib import Path
 from typing import Dict, Iterator, Set
 
+from .export_monitor import wait_for_stable_file
 from .quality_control import QCPacket, packet_from_result_file
 
 
@@ -39,6 +40,10 @@ def monitor_results(
     seen: Dict[str, int] = {}
     while True:
         for path in changed_result_files(directory, seen):
+            if not wait_for_stable_file(path, timeout=max(10.0, interval * 5)):
+                # The writer may still be exporting; let a later poll retry it.
+                seen.pop(str(path.resolve()), None)
+                continue
             yield packet_from_result_file(path, element=element)
         if once:
             return

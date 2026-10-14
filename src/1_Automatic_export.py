@@ -18,6 +18,8 @@ import threading
 import fnmatch
 from pathlib import Path
 
+from hg_mc_auto.export_monitor import wait_for_stable_file
+
 try:
     import pyautogui
     import pygetwindow as gw
@@ -1233,7 +1235,10 @@ class AutomationExecutor:
                     
                 # 动作后等待
                 time.sleep(action.get("wait_time", 0.3))
-                
+
+            if not wait_for_stable_file(output_file):
+                print(f"Export output was not created or did not stabilize: {output_file}")
+                return False
             return True
             
         except Exception as e:
