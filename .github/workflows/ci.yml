@@ -1,0 +1,90 @@
+# CI workflow for developers: lint, format, and test on every PR / push.
+#
+# - Ruff checks code style and lint rules.
+# - Ruff auto-fixes formatting issues and commits them back to the PR
+#   (the "autofix" job).
+# - Unit tests run to make sure the changes do not break anything.
+
+name: CI - Lint, Format & Test
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write   # needed to commit Ruff auto-fixes back to the PR
+
+jobs:
+  lint:
+    name: Lint & Format (Ruff)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Ruff
+        run: pip install ruff
+
+      - name: Ruff check (lint)
+        run: ruff check src tests scripts
+
+      - name: Ruff format check
+        run: ruff format --check src tests scripts
+
+  autofix:
+    name: Auto-fix formatting
+    runs-on: ubuntu-latest
+    # Only run on pull requests, and only when the lint job fails.
+    if: github.event_name == 'pull_request'
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Ruff
+        run: pip install ruff
+
+      - name: Auto-fix with Ruff
+        run: |
+          ruff check --fix src tests scripts || true
+          ruff format src tests scripts || true
+
+      - name: Commit and push fixes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "style: apply ruff auto-fixes"
+          branch: ${{ github.head_ref }}
+
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[mcp]"
+          pip install typer
+
+      - name: Run unit tests
+        run: |
+          PYTHONPATH=. python -m unittest discover -s tests -v

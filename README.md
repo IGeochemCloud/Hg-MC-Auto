@@ -1,27 +1,42 @@
-# Hg-MC-Auto
+# ⭐ Hg-MC-Auto
 
-Hg-MC-Auto is an element-aware automation toolkit for isotope analysis workflows, with bilingual CLI support, agent-facing MCP tooling, and cross-platform Python packaging.
+> **Element-aware automation toolkit for isotope analysis workflows** — bilingual CLI, agent-facing MCP tooling, and cross-platform Python packaging.
+
 ![alt text](<docs/Graphic abstract.png>)
 
-- [A data-driven, post-acquisition quality diagnostic pipeline for isotope analysis by MC-ICP-MS](https://pubs.rsc.org/ja/article-abstract/41/5/1894/1230352/A-data-driven-post-acquisition-quality-diagnostic?redirectedFrom=fulltext)
+<div align="center">
 
+[![PyPI version](https://img.shields.io/pypi/v/hg-mc-auto.svg?style=flat-square&color=blue)](https://pypi.org/project/hg-mc-auto/)
+[![Python versions](https://img.shields.io/pypi/pyversions/hg-mc-auto.svg?style=flat-square&color=green)](https://pypi.org/project/hg-mc-auto/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
+[![CI - Lint, Format & Test](https://img.shields.io/github/actions/workflow/status/IGeochemCloud/Hg-MC-Auto/ci.yml?style=flat-square&label=CI)](https://github.com/IGeochemCloud/Hg-MC-Auto/actions/workflows/ci.yml)
+[![PyPI - Release](https://img.shields.io/github/actions/workflow/status/IGeochemCloud/Hg-MC-Auto/pypi-publish.yml?style=flat-square&label=PyPI%20Release)](https://github.com/IGeochemCloud/Hg-MC-Auto/actions/workflows/pypi-publish.yml)
+[![GitHub stars](https://img.shields.io/github/stars/IGeochemCloud/Hg-MC-Auto?style=flat-square&color=orange)](https://github.com/IGeochemCloud/Hg-MC-Auto/stargazers)
 
-## Quick summary
+</div>
 
-- User-ready package: `pip install hg-mc-auto`
-- CLI entry points: `hgmc` and `hg-mc-auto`
-- Supported elements: `hg`, `fe`, `cd`
-- Platforms: Windows, Linux, macOS
-- Release flow: `hgmc-release` and `hgmc release`
+- 📄 [A data-driven, post-acquisition quality diagnostic pipeline for isotope analysis by MC-ICP-MS](https://pubs.rsc.org/ja/article-abstract/41/5/1894/1230352/A-data-driven-post-acquisition-quality-diagnostic?redirectedFrom=fulltext)
 
 ---
 
-# For Users
+## ✨ Quick summary
+
+| | |
+|---|---|
+| 📦 **User-ready package** | `pip install hg-mc-auto` |
+| 🖥️ **CLI entry points** | `hgmc` and `hg-mc-auto` |
+| 🧪 **Supported elements** | `hg`, `fe`, `cd` |
+| 🖥️ **Platforms** | Windows, Linux, macOS |
+| 🚀 **Release flow** | GitHub Actions → PyPI (Trusted Publishing) |
+
+---
+
+# 👤 For Users
 
 > This section is for people who want to **use** Hg-MC-Auto to process isotope
 > data. You do not need to read the source code or understand the internals.
 
-## 1) Install and start
+## 1) 🚀 Install and start
 
 ### Install
 
@@ -149,13 +164,13 @@ script; it does not execute Evaluation GUI automation or control the instrument.
 
 ---
 
-# For Developers
+# 👨‍💻 For Developers
 
 > This section is for contributors and maintainers who want to **build, test,
 > extend, or release** Hg-MC-Auto. It assumes you are comfortable with Python,
 > git, and the command line.
 
-## 2) Set up the development environment
+## 2) 🛠️ Set up the development environment
 
 ### Clone and set up the repo
 
@@ -274,7 +289,7 @@ or private instrument credentials in the repository.
 
 ---
 
-## 3) Project structure
+## 3) 📁 Project structure
 
 ![alt text](<docs/Overall Architecture Diagram.png>)
 
@@ -303,7 +318,7 @@ Hg-MC-Auto/
 
 ---
 
-## 4) Platform notes
+## 4) 🖥️ Platform notes
 
 ### Windows
 
@@ -334,7 +349,7 @@ hgmc --help
 
 ---
 
-## 5) Release status
+## 5) 🚦 Release status
 
 This project is currently in a release-oriented v0.1.0 state with:
 
@@ -348,7 +363,7 @@ This project is currently in a release-oriented v0.1.0 state with:
 
 ---
 
-## 6) Models and performance
+## 6) 🤖 Models and performance
 
 ### Binary classification models
 
@@ -382,7 +397,7 @@ Validated on **26,218 historical measurements**.
 
 ---
 
-## 7) Citation and contact
+## 7) 📝 Citation and contact
 
 If you use Hg-MC-Auto in your research, please cite the associated manuscript:
 
@@ -414,7 +429,7 @@ or project maintainer contact listed above.
 
 ---
 
-## 8) Contributing
+## 8) 🤝 Contributing
 
 We welcome contributions! Please:
 
@@ -424,12 +439,12 @@ We welcome contributions! Please:
 4. Ensure code follows PEP 8 guidelines
 5. Include tests for new functionality
 
-## 9) Issues and support
+## 9) 🐛 Issues and support
 
 - **Bug reports**: Use the [GitHub Issues](https://github.com/IGeochemCloud/Hg-MC-Auto/issues) page
 - **Questions**: Check the Wiki or open a discussion
 - **Feature requests**: Submit via GitHub Issues with the `enhancement` label
 
-## 10) License
+## 10) 📄 License
 
 This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
