@@ -16,7 +16,12 @@ Hg-MC-Auto is an element-aware automation toolkit for isotope analysis workflows
 
 ---
 
-## 1) User guide
+# For Users
+
+> This section is for people who want to **use** Hg-MC-Auto to process isotope
+> data. You do not need to read the source code or understand the internals.
+
+## 1) Install and start
 
 ### Install
 
@@ -65,6 +70,18 @@ Use `hgmc list-elements` to check maturity. At present, Hg is the production
 legacy workflow; Fe and Cd are scaffolds, not validated element-specific
 analytical pipelines. The generic `run` command resolves task metadata and must
 not be mistaken for executing a complete scientific workflow for every element.
+
+### Task options
+
+The Hg workflow supports five tasks, selected with `--task`:
+
+| # | Task | What it does |
+|---|------|--------------|
+| 1 | `export` | Convert proprietary `.dat` files to structured CSV, merge with instrument log files (uses RPA for vendor software interaction) |
+| 2 | `calculate` | Compute δ²⁰²Hg values relative to NIST SRM 3133, mass-independent fractionation anomalies (Δ-values), and batch-process entire datasets |
+| 3 | `empirical` | Apply literature-based acceptance ranges (Table 1 in manuscript), flag measurements outside 95% confidence intervals; thresholds configurable via `custom_ranges_config.json` |
+| 4 | `predict` | Use pre-trained ensemble models for quality assessment, provide confidence scores, and identify probable causes for abnormal measurements |
+| 5 | `train` | Train laboratory-specific models on your annotated data; supports both binary and multi-class classification, adapting to different instrument performances and sample matrices |
 
 ### Structured QC and optional LLM interpretation
 
@@ -132,7 +149,13 @@ script; it does not execute Evaluation GUI automation or control the instrument.
 
 ---
 
-## 2) Developer guide
+# For Developers
+
+> This section is for contributors and maintainers who want to **build, test,
+> extend, or release** Hg-MC-Auto. It assumes you are comfortable with Python,
+> git, and the command line.
+
+## 2) Set up the development environment
 
 ### Clone and set up the repo
 
@@ -183,26 +206,35 @@ agent may prepare a review, but a qualified operator confirms any action.
 ### Release flow
 
 The recommended way to publish a new version to both GitHub and PyPI is the
-one-command sync helper. It validates the version, refuses to run with
-uncommitted changes, checks credentials, then builds, tags, pushes to GitHub,
-and uploads to PyPI.
+one-command `release.sh` script. It reads the PyPI token from a local,
+gitignored `.env` file, then validates, builds, tags, pushes to GitHub, creates
+a GitHub Release, and uploads to PyPI.
+
+First-time setup (one time only):
+
+```bash
+# 1. Copy the template and fill in your real PyPI token
+cp .env.example .env
+# 2. Edit .env and set PYPI_TOKEN=pypi-...
+# 3. Log in to GitHub CLI once
+gh auth login
+```
+
+Then publish any new version:
 
 ```bash
 # 1. Bump the version in pyproject.toml (e.g. 0.1.1)
 # 2. Commit your changes
-# 3. Export your PyPI token (never commit it)
-export PYPI_TOKEN="your-token"
-
-# 4. Dry-run to validate without publishing
-hgmc-release sync --version 0.1.1 --dry-run
-
-# 5. Publish to GitHub and PyPI together
-hgmc-release sync --version 0.1.1 --message "release 0.1.1"
+# 3. Run the one-command release
+./release.sh 0.1.1 "release 0.1.1"
 ```
 
-The sync helper will fail early if the requested version does not match
-`pyproject.toml`, if the git tag already exists, if the working tree is dirty,
-or if `PYPI_TOKEN` / `twine` are missing.
+The script runs a dry-run first, then publishes. It will fail early if the
+requested version does not match `pyproject.toml`, if the git tag already
+exists, if the working tree is dirty, or if `PYPI_TOKEN` / `twine` are missing.
+
+The `.env` file is gitignored and must never be committed. Only `.env.example`
+(the template) and `release.sh` are tracked in git.
 
 Individual steps are also available:
 
@@ -311,160 +343,88 @@ This project is currently in a release-oriented v0.1.0 state with:
 
 ---
 
-## 6) Citation and contact
+## 6) Models and performance
 
-If you use this project in published work, please cite the project and associated manuscript as appropriate for your workflow and repository policy.
+### Binary classification models
 
-For development questions or collaboration, use the repository issue tracker or project maintainer contact listed in the upstream project metadata.
-│   ├── 3_Empirical_model.py           # Expert rule-based classification
-│   ├── 4_ML_Predict.py                # ML model prediction interface
-│   ├── 5_Exter_ML_train.py            # Binary classifier training
-│   └── 6.Inter_ML_train.py            # Multi-class classifier training
-│
-├── custom_ranges_config.json          # User-configurable acceptance ranges
-├── mouse_coordinates.config           # RPA coordinate settings
-├── requirements.txt                   # Python dependencies
-├── LICENSE                            # MIT License
-└── README.md                          # This file
-```
-## 📖 Usage Guide
-Launching the Application
-After installation, run:
+Distinguish between **"Normal"** and **"Abnormal"** measurements.
 
-```bash
-python src/main.py
-```
+- **Performance**: test F1-score 0.9960, AUC 0.999–1.0
+- **Algorithms**: Random Forest, XGBoost, Bagging classifiers
+- **Sampling strategies**: SMOTE, ADASYN, SMOTEENN, UnderSampling
 
-You will see the interactive interface:
+### Multi-class diagnostic models
 
-```bash
-Welcome to Hg_MC_Auto!
-============================================================
+Identify the root cause of an abnormality:
 
-Please select a task:
-1. Automatically export isotope data
-2. Automatically export instrument parameters, merge isotope data, and calculate isotope fractionation values
-3. Classify data using an empirical model
-4. Classify data using a machine learning model
-5. Train your own machine learning expert model
-0. Exit
-```
-## Task Options Explained
-Option 1: Automated Data Export
-Converts proprietary .dat files to structured CSV format
+- Possible instrument instability
+- Potential concentration anomaly
+- Combined factors
+- Other reasons, retesting recommended
 
-Merges with corresponding instrument log files
+**Features**: internal precision metrics, concentration mismatch ratios.
 
-Uses RPA for vendor software interaction
+### Performance highlights
 
-Option 2: Isotope Calculation
-Calculates δ202Hg values relative to NIST SRM 3133
+| Metric | Binary classification | Multi-class diagnosis |
+|--------|----------------------|-----------------------|
+| Accuracy | 99.61% | 99.84% |
+| F1-score | 0.9960 | 0.9909 (balanced) |
+| Recall (Normal) | 99.8% | – |
+| AUC | 0.999–1.0 | – |
 
-Computes mass-independent fractionation anomalies (Δ-values)
+Validated on **26,218 historical measurements**.
 
-Batch processes entire datasets
+---
 
-Option 3: Empirical Model Classification
-Applies literature-based acceptance ranges (Table 1 in manuscript)
+## 7) Citation and contact
 
-Flags measurements outside 95% confidence intervals
+If you use Hg-MC-Auto in your research, please cite the associated manuscript:
 
-User-configurable thresholds via custom_ranges_config.json
-
-Option 4: ML Model Prediction
-Uses pre-trained ensemble models for quality assessment
-
-Provides confidence scores for each prediction
-
-Identifies probable causes for abnormal measurements
-
-Option 5: Custom Model Training
-Train laboratory-specific models using your annotated data
-
-Supports both binary and multi-class classification
-
-Adapts to different instrument performances and sample matrices
-
-## 🤖 Models
-Binary Classification Models
-Purpose: Distinguish between "Normal" and "Abnormal" measurements
-
-Performance: Test F1-score: 0.9960, AUC: 0.999-1.0
-
-Algorithms: Random Forest, XGBoost, Bagging Classifiers
-
-Sampling Strategies: SMOTE, ADASYN, SMOTEENN, UnderSampling
-
-Multi-class Diagnostic Models
-Purpose: Identify root causes of abnormalities
-
-Categories:
-
-"Possible instrument instability"
-
-"Potential concentration anomaly"
-
-"Combined factors"
-
-"Other reasons, retesting recommended"
-
-Features: Internal precision metrics, concentration mismatch ratios
-
-## 📊 Performance Highlights
-Metric	Binary Classification	Multi-class Diagnosis
-Accuracy	99.61%	99.84%
-F1-Score	0.9960	0.9909 (balanced)
-Recall (Normal)	99.8%	-
-AUC	0.999-1.0	-
-Based on validation with 26,218 historical measurements
-
-## 📝 Citation
-If you use Hg-MC-Auto in your research, please cite:
-
-bibtex
+```bibtex
 @article{zhou2025selfdriving,
-  title={A Data‑Driven, Post‑Acquisition Quality Diagnostic Pipeline for Isotope Analysis by MC-ICP-MS},
+  title={A Data-Driven, Post-Acquisition Quality Diagnostic Pipeline for Isotope Analysis by MC-ICP-MS},
   author={Zhou, Chufan and Huang, Qiang and Tang, Yang and Zhong, Ying and Feng, Xinbin},
   journal={Journal of Analytical Atomic Spectrometry},
   year={2025},
   doi={10.1039/D5JA00519A}
 }
-## 🤝 Contributing
-We welcome contributions! Please:
+```
 
-Fork the repository
+### Contact
 
-Create a feature branch
-
-Submit a pull request
-
-Ensure code follows PEP 8 guidelines
-
-Include tests for new functionality
-
-## 🐛 Issues and Support
-Bug Reports: Use the GitHub Issues page
-
-Questions: Check the Wiki or open a discussion
-
-Feature Requests: Submit via GitHub Issues with the "enhancement" label
-
-## 📧 Contact
-Laboratory of Karst Environmental Evolution and Ecological Security, 
+Laboratory of Karst Environmental Evolution and Ecological Security,
 Institute of Geochemistry, Chinese Academy of Sciences,
 Guiyang, Guizhou 550081, China
 
-We welcome experts from different laboratories to contribute their expertise 
-and make contributions to the intelligent geochemistry laboratory. 
-Welcome to join us and make a change together.
+We welcome experts from different laboratories to contribute their expertise
+and make contributions to the intelligent geochemistry laboratory. Welcome to
+join us and make a change together.
 
-Chufan Zhou:
-📧 zhouchufan@mail.gyig.ac.cn
-🔗 ORCID: [0009-0008-0144-9017](https://orcid.org/0009-0008-0144-9017)
+- **Chufan Zhou**: 📧 zhouchufan@mail.gyig.ac.cn · 🔗 [ORCID 0009-0008-0144-9017](https://orcid.org/0009-0008-0144-9017)
+- **Qiang Huang** (Corresponding Author): 📧 huangqiang@mail.gyig.ac.cn · 🔗 [ORCID 0000-0003-1568-9042](https://orcid.org/0000-0003-1568-9042)
 
-Qiang Huang (Corresponding Author):
-📧 huangqiang@mail.gyig.ac.cn
-🔗 ORCID: [0000-0003-1568-9042](https://orcid.org/0000-0003-1568-9042)
+For development questions or collaboration, use the repository issue tracker
+or project maintainer contact listed above.
 
-📄 License
-This project is licensed under the MIT License - see the LICENSE file for details.
+---
+
+## 8) Contributing
+
+We welcome contributions! Please:
+
+1. Fork the repository
+2. Create a feature branch
+3. Submit a pull request
+4. Ensure code follows PEP 8 guidelines
+5. Include tests for new functionality
+
+## 9) Issues and support
+
+- **Bug reports**: Use the [GitHub Issues](https://github.com/IGeochemCloud/Hg-MC-Auto/issues) page
+- **Questions**: Check the Wiki or open a discussion
+- **Feature requests**: Submit via GitHub Issues with the `enhancement` label
+
+## 10) License
+
+This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
