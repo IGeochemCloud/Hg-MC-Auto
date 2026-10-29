@@ -205,54 +205,59 @@ agent may prepare a review, but a qualified operator confirms any action.
 
 ### Release flow
 
-The recommended way to publish a new version to both GitHub and PyPI is the
-one-command `release.sh` script. It reads the PyPI token from a local,
-gitignored `.env` file, then validates, builds, tags, pushes to GitHub, creates
-a GitHub Release, and uploads to PyPI.
+Publishing a new version is automated with a GitHub Actions workflow
+(`.github/workflows/pypi-publish.yml`). When you publish a GitHub Release, the
+workflow builds the distribution and uploads it to PyPI automatically using
+**Trusted Publishing** (OIDC) — no PyPI token is stored in the repository.
 
-First-time setup (one time only):
+#### One-time setup
 
-```bash
-# 1. Copy the template and fill in your real PyPI token
-cp .env.example .env
-# 2. Edit .env and set PYPI_TOKEN=pypi-...
-# 3. Log in to GitHub CLI once
-gh auth login
-```
+1. **Configure Trusted Publishing on PyPI** (one time only):
+   - Open https://pypi.org/manage/account/publishing/
+   - Add a pending publisher with:
+     - **PyPI project name**: `hg-mc-auto`
+     - **Owner**: `IGeochemCloud`
+     - **Repository**: `Hg-MC-Auto`
+     - **Workflow name**: `pypi-publish.yml`
+     - **Environment**: `pypi`
+2. **Create the `pypi` environment** in GitHub (Settings → Environments) if you
+   want deployment protection rules.
 
-Then publish any new version:
+#### Publish a new version
 
 ```bash
 # 1. Bump the version in pyproject.toml (e.g. 0.1.1)
-# 2. Commit your changes
-# 3. Run the one-command release
-./release.sh 0.1.1 "release 0.1.1"
+# 2. Commit and push your changes
+git add . && git commit -m "release 0.1.1"
+git push
+# 3. Tag and push (optional, but recommended)
+git tag 0.1.1
+git push origin 0.1.1
+# 4. Create a GitHub Release (triggers the workflow)
+gh release create 0.1.1 --title "v0.1.1" --notes "release 0.1.1"
 ```
 
-The script runs a dry-run first, then publishes. It will fail early if the
-requested version does not match `pyproject.toml`, if the git tag already
-exists, if the working tree is dirty, or if `PYPI_TOKEN` / `twine` are missing.
+Once the Release is published, the workflow builds and uploads the package to
+PyPI automatically. You can watch progress under the **Actions** tab.
 
-The `.env` file is gitignored and must never be committed. Only `.env.example`
-(the template) and `release.sh` are tracked in git.
+> **Important**: Do **not** also run `./release.sh` or `twine upload` for the
+> same version — that would upload the package to PyPI twice. The GitHub
+> Actions workflow is now the single source of truth for PyPI publishing.
 
-Individual steps are also available:
+#### Legacy local script
+
+The `release.sh` script and the `hgmc-release` command remain available for
+local validation and manual publishing, but they are **no longer the
+recommended path** for PyPI uploads:
 
 ```bash
-hgmc-release check
-hgmc-release build
-hgmc-release publish
+hgmc-release check   # validate the local environment
+hgmc-release build   # build dist/ locally
+hgmc-release publish # manual twine upload (requires PYPI_TOKEN)
 ```
 
-### PyPI publishing
-
-```bash
-python -m build
-python -m twine upload dist/*
-```
-
-Set `PYPI_TOKEN` before publishing if you are using automation. Create the token
-at https://pypi.org/manage/account/token/ and use `__token__` as the username.
+If you use `hgmc-release publish`, set `PYPI_TOKEN` first. Create the token at
+https://pypi.org/manage/account/token/ and use `__token__` as the username.
 
 ### OrcaRouter open-source maintainer application
 

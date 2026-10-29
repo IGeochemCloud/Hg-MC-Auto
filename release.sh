@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
 # One-command release to GitHub (tag + Release) and PyPI.
 #
+# NOTE: The recommended publishing path is now the GitHub Actions workflow
+# (.github/workflows/pypi-publish.yml), which uploads to PyPI automatically
+# via Trusted Publishing when a GitHub Release is published. Do NOT run this
+# script for the same version you publish through the workflow, or the package
+# will be uploaded to PyPI twice.
+#
+# This script remains available for local validation and manual publishing.
+#
 # Usage:
 #   ./release.sh 0.1.1 "release 0.1.1"
 #
