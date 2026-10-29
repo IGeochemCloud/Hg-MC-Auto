@@ -182,20 +182,34 @@ agent may prepare a review, but a qualified operator confirms any action.
 
 ### Release flow
 
+The recommended way to publish a new version to both GitHub and PyPI is the
+one-command sync helper. It validates the version, refuses to run with
+uncommitted changes, checks credentials, then builds, tags, pushes to GitHub,
+and uploads to PyPI.
+
 ```bash
-hgmc release --action check
-hgmc release --action build
-hgmc release --action publish
-hgmc release --action sync --version 0.1.1 --message "release 0.1.1"
+# 1. Bump the version in pyproject.toml (e.g. 0.1.1)
+# 2. Commit your changes
+# 3. Export your PyPI token (never commit it)
+export PYPI_TOKEN="your-token"
+
+# 4. Dry-run to validate without publishing
+hgmc-release sync --version 0.1.1 --dry-run
+
+# 5. Publish to GitHub and PyPI together
+hgmc-release sync --version 0.1.1 --message "release 0.1.1"
 ```
 
-Direct script form:
+The sync helper will fail early if the requested version does not match
+`pyproject.toml`, if the git tag already exists, if the working tree is dirty,
+or if `PYPI_TOKEN` / `twine` are missing.
+
+Individual steps are also available:
 
 ```bash
 hgmc-release check
 hgmc-release build
 hgmc-release publish
-hgmc-release sync --version 0.1.1 --message "release 0.1.1"
 ```
 
 ### PyPI publishing
@@ -205,7 +219,8 @@ python -m build
 python -m twine upload dist/*
 ```
 
-Set `PYPI_TOKEN` before publishing if you are using automation.
+Set `PYPI_TOKEN` before publishing if you are using automation. Create the token
+at https://pypi.org/manage/account/token/ and use `__token__` as the username.
 
 ### OrcaRouter open-source maintainer application
 
