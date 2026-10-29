@@ -96,6 +96,18 @@ def publish_to_pypi() -> dict:
     return {"status": "published", "repository": "pypi"}
 
 
+def create_github_release(version: str, message: str) -> dict:
+    """Create a GitHub Release with the built artifacts using the gh CLI."""
+    if shutil.which("gh") is None:
+        return {"status": "skipped", "reason": "gh CLI not installed"}
+    dist_files = " ".join(str(p) for p in sorted((PROJECT_ROOT / "dist").glob("*")))
+    run_cmd(
+        f"gh release create {version} {dist_files} --title v{version} --notes {message!r}",
+        check=False,
+    )
+    return {"status": "created", "tag": version}
+
+
 def sync_github_and_pypi(version: str, message: str, *, dry_run: bool = False) -> dict:
     if not (PROJECT_ROOT / ".git").exists():
         raise RuntimeError("This project is not a git repository. Initialize git first.")
@@ -130,7 +142,9 @@ def sync_github_and_pypi(version: str, message: str, *, dry_run: bool = False) -
 
     for name, cmd in steps:
         run_cmd(cmd)
-    return {"status": "synced", "version": version, "tag": version}
+
+    release = create_github_release(version, message)
+    return {"status": "synced", "version": version, "tag": version, "github_release": release}
 
 
 def app(action: str | list[str] | None = None) -> None:
