@@ -63,12 +63,15 @@ class TestMainCli(unittest.TestCase):
         self.assertIn("Hg 常规流程", result.output)
 
     def test_stdio_mcp_handshake_lists_and_calls_tools(self):
+        import shutil
         from mcp import ClientSession, StdioServerParameters
         from mcp.client.stdio import stdio_client
 
         root = Path(__file__).resolve().parents[1]
+        # Use system hgmc (installed via pip install -e) instead of local venv path
+        hgmc_path = shutil.which("hgmc") or str(root / "hg-mc-auto/bin/hgmc")
         parameters = StdioServerParameters(
-            command=str(root / "hg-mc-auto/bin/hgmc"),
+            command=hgmc_path,
             args=["mcp", "--action", "stdio"],
             cwd=root,
         )
