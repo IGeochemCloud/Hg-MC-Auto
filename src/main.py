@@ -11,6 +11,7 @@ if str(SRC_ROOT) not in sys.path:
     sys.path.insert(0, str(SRC_ROOT))
 
 from hg_mc_auto.core import REGISTRY, build_workflow_context
+from hg_mc_auto.core.workflow import resolve_workflow_for_element, resolve_element_task
 
 
 app = typer.Typer(

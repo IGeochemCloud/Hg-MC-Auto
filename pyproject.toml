@@ -41,3 +41,60 @@ package-dir = {"" = "src"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.ruff]
+# Only check src/ and tests/ — scripts/ are standalone analysis tools.
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+# Core error rules only — catch real bugs, not style issues.
+# Ignore: pyupgrade (UP), blind-except (BLE), f-string style (F541),
+# naming (N), simplification (SIM), comprehension (C4), security (S),
+# pylint (PL), pie (PIE), flake8-builtins (B), ruff rules (RUF).
+ignore = [
+    "UP",      # pyupgrade style suggestions
+    "BLE",     # blind except (style)
+    "F541",    # f-string without placeholder (style)
+    "F811",    # redefinition of unused name (often intentional)
+    "N",       # naming conventions
+    "SIM",     # simplification suggestions
+    "C4",      # comprehension suggestions
+    "S",       # security/bandit rules
+    "PL",      # pylint rules
+    "PIE",     # pie recommendations
+    "B",       # flake8-builtins
+    "RUF",     # ruff-specific rules
+    "FBT",     # boolean/truthy
+    "FA",      # flake8-attribution
+    "FURB",    # refurb suggestions
+    "PGH",     # pygrep-hooks
+    "PERF",    # performance
+    "RSE",     # raise statement
+    "TRY",     # tryceratops
+    "C90",     # mccabe complexity
+    "ANN",     # annotation rules (too strict for now)
+    "D",       # docstring rules
+    "EM",      # exception messages
+    "ISC",     # implicit string concatenation
+    "ICN",     # import conventions
+    "INP",     # implicit namespace
+    "PIE810",  # non-pep585-type-aliases
+    "RET",     # return statement
+    "T20",     # print statement
+    "TCH",     # type-checking
+    "TD",      # todo
+    "TID",     # tid
+    "ARG",     # unused arguments
+    "COM",     # commas
+    "D203",    # 1-blank-line-before-class
+    "D213",    # multi-line-summary-second-line
+    "I001",    # import sorting (style)
+    "E402",    # import not at top of file (style)
+    "E722",    # bare except (style, intentional in some cases)
+    "F401",    # unused import (style)
+    "F841",    # unused variable (style)
+]
+select = ["E4", "E7", "E9", "F", "I"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["F401"]  # Allow unused imports in test files

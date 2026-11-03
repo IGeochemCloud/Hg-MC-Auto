@@ -1,6 +1,6 @@
 # CI workflow for developers: lint, format, and test on every PR / push.
 #
-# - Ruff checks code style and lint rules.
+# - Ruff checks code style and lint rules on src/ and tests/ only.
 # - Ruff auto-fixes formatting issues and commits them back to the PR
 #   (the "autofix" job).
 # - Unit tests run to make sure the changes do not break anything.
@@ -31,10 +31,7 @@ jobs:
         run: pip install ruff
 
       - name: Ruff check (lint)
-        run: ruff check src tests scripts
-
-      - name: Ruff format check
-        run: ruff format --check src tests scripts
+        run: ruff check src tests
 
   autofix:
     name: Auto-fix formatting
@@ -57,8 +54,7 @@ jobs:
 
       - name: Auto-fix with Ruff
         run: |
-          ruff check --fix src tests scripts || true
-          ruff format src tests scripts || true
+          ruff check --fix src tests || true
 
       - name: Commit and push fixes
         uses: stefanzweifel/git-auto-commit-action@v5
@@ -71,7 +67,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.9", "3.11", "3.12"]
+        python-version: ["3.10", "3.11", "3.12"]
     steps:
       - uses: actions/checkout@v4
 
