@@ -500,9 +500,9 @@ def detect_and_remove_outliers_by_label(df, label_col='Label', method='iqr', thr
     
     # Display detailed statistics
     print("\nOutlier statistics by label:")
-    for label, stats in outlier_stats.items():
-        print(f"  {label}: {stats['outliers_removed']}/{stats['total_samples']} outliers "
-              f"({stats['percentage_removed']:.1f}%) - {stats['remaining_samples']} samples remaining")
+    for label, stat in outlier_stats.items():
+        print(f"  {label}: {stat['outliers_removed']}/{stat['total_samples']} outliers "
+              f"({stat['percentage_removed']:.1f}%) - {stat['remaining_samples']} samples remaining")
     
     return df_clean, outlier_stats
 
