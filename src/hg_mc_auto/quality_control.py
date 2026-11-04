@@ -116,13 +116,58 @@ def packet_from_result_file(
     run_id: str | None = None,
     quality_threshold: float = 0.5,
 ) -> QCPacket:
-    """Adapt one Hg result row into qc.v1 without sending raw files to an LLM."""
+    """Adapt a single result row into qc.v1 without sending raw files to an LLM."""
     result_path = Path(path)
     rows = _read_result_rows(result_path)
     if not rows:
         raise ValueError(f"Result file is empty: {result_path}")
-    row = rows[-1]
+    if len(rows) != 1:
+        raise ValueError(
+            f"Expected exactly one result row in {result_path}, found {len(rows)}; "
+            "use packets_from_result_file for batch results"
+        )
+    return _packet_from_result_row(
+        rows[0],
+        result_path,
+        element=element,
+        run_id=run_id,
+        quality_threshold=quality_threshold,
+    )
 
+
+def packets_from_result_file(
+    path: str | Path,
+    *,
+    element: str = "hg",
+    quality_threshold: float = 0.5,
+) -> List[QCPacket]:
+    """Adapt every result row into a human-review-required QC packet."""
+    result_path = Path(path)
+    rows = _read_result_rows(result_path)
+    if not rows:
+        raise ValueError(f"Result file is empty: {result_path}")
+    return [
+        _packet_from_result_row(
+            row,
+            result_path,
+            element=element,
+            run_id=None,
+            quality_threshold=quality_threshold,
+            row_number=index,
+        )
+        for index, row in enumerate(rows, start=1)
+    ]
+
+
+def _packet_from_result_row(
+    row: Mapping[str, Any],
+    result_path: Path,
+    *,
+    element: str,
+    run_id: str | None,
+    quality_threshold: float,
+    row_number: int = 1,
+) -> QCPacket:
     if {"element", "run_id", "metrics", "results", "flags"}.issubset(row):
         return build_qc_packet(
             element=str(row["element"]),
@@ -184,7 +229,10 @@ def packet_from_result_file(
             "evidence": {"confidence": confidence},
         })
 
-    resolved_run_id = run_id or str(first_value("run_id", "Run_ID", "Sample_ID", "Sample Name") or result_path.stem)
+    resolved_run_id = run_id or str(
+        first_value("run_id", "Run_ID", "Sample_ID", "Sample Name")
+        or (result_path.stem if row_number == 1 else f"{result_path.stem}-{row_number}")
+    )
     return build_qc_packet(
         element=element,
         run_id=resolved_run_id,

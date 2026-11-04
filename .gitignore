@@ -12,6 +12,8 @@ __pycache__/
 
 # Distribution / packaging
 .vscode
+!.vscode/
+!.vscode/mcp.json
 .Python
 build/
 develop-eggs/

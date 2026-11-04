@@ -1,0 +1,19 @@
+{
+  "servers": {
+    "hg-mc-auto": {
+      "type": "stdio",
+      "command": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
+      "args": [
+        "-m",
+        "hg_mc_auto.cli",
+        "mcp",
+        "--action",
+        "stdio"
+      ],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}\\src"
+      }
+    }
+  }
+}

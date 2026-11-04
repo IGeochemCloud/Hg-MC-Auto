@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Dict, Iterator, Set
 
 from .export_monitor import wait_for_stable_file
-from .quality_control import QCPacket, packet_from_result_file
+from .quality_control import QCPacket, packets_from_result_file
 
 
 SUPPORTED_RESULT_EXTENSIONS = {".json", ".csv", ".xlsx", ".xls"}
@@ -44,7 +44,7 @@ def monitor_results(
                 # The writer may still be exporting; let a later poll retry it.
                 seen.pop(str(path.resolve()), None)
                 continue
-            yield packet_from_result_file(path, element=element)
+            yield from packets_from_result_file(path, element=element)
         if once:
             return
         time.sleep(interval)

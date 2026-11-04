@@ -65,6 +65,18 @@ def resolve_element_task(element: str, task: str) -> Dict[str, Any]:
     if task not in workflow["tasks"]:
         raise ValueError(f"Task '{task}' is not supported for element '{element}'.")
 
+    if workflow["support_status"] != "production":
+        return {
+            "element": workflow["element"],
+            "task": task,
+            "script": None,
+            "implementation_status": "scaffold",
+            "description": (
+                f"{workflow['display_name']} is a scaffold; "
+                "no element-specific task script is implemented."
+            ),
+        }
+
     task_map = {
         "export": "1_Automatic_export.py",
         "calculate": "2_Automatic_calculation.py",
@@ -72,14 +84,24 @@ def resolve_element_task(element: str, task: str) -> Dict[str, Any]:
         "predict": "4_ML_Predict.py",
         "train-external": "5.Exter_ML_train.py",
         "train-internal": "6.Inter_ML_train.py",
-        "train": "train",
     }
+    script = task_map.get(task)
 
     return {
         "element": workflow["element"],
         "task": task,
-        "script": task_map.get(task, task),
-        "description": f"Run the {task} workflow for {workflow['display_name']}",
+        "script": script,
+        "scripts": (
+            ["5.Exter_ML_train.py", "6.Inter_ML_train.py"]
+            if task == "train"
+            else ([script] if script else [])
+        ),
+        "implementation_status": "available" if script else "requires_task_selection",
+        "description": (
+            "Select external or internal training before execution."
+            if task == "train"
+            else f"Run the {task} workflow for {workflow['display_name']}"
+        ),
     }
 
 

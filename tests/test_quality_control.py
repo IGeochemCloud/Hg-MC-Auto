@@ -6,6 +6,7 @@ from pathlib import Path
 from hg_mc_auto.quality_control import (
     build_qc_packet,
     packet_from_result_file,
+    packets_from_result_file,
     normalize_qc_result,
     validate_llm_assessment,
 )
@@ -73,6 +74,30 @@ class TestQualityControl(unittest.TestCase):
             with self.assertRaises(ValueError):
                 packet_from_result_file(path, element="hg")
 
+    def test_single_packet_adapter_rejects_multirow_file(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "results.json"
+            path.write_text(json.dumps([
+                {"run_id": "run-1", "Data_Quality_Score": 0.8},
+                {"run_id": "run-2", "Data_Quality_Score": 0.2},
+            ]), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "packets_from_result_file"):
+                packet_from_result_file(path, element="hg")
+
+    def test_batch_adapter_returns_a_packet_for_each_row(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "results.json"
+            path.write_text(json.dumps([
+                {"Data_Quality_Score": 0.8},
+                {"Data_Quality_Score": 0.2},
+            ]), encoding="utf-8")
+            packets = packets_from_result_file(path, element="hg")
+
+        self.assertEqual(len(packets), 2)
+        self.assertEqual([packet.run_id for packet in packets], ["results", "results-2"])
+        self.assertEqual(packets[0].metrics["data_quality_score"], 0.8)
+        self.assertEqual(packets[1].metrics["data_quality_score"], 0.2)
+
     def test_monitor_detects_new_result_file_once(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "result.json"
@@ -93,6 +118,18 @@ class TestQualityControl(unittest.TestCase):
         self.assertEqual(len(packets), 1)
         self.assertEqual(packets[0].run_id, "result")
         self.assertEqual(packets[0].metrics["data_quality_score"], 0.8)
+
+    def test_monitor_emits_one_packet_per_result_row(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "results.json"
+            path.write_text(json.dumps([
+                {"Data_Quality_Score": 0.8},
+                {"Data_Quality_Score": 0.2},
+            ]), encoding="utf-8")
+            packets = list(monitor_results(directory, element="hg", once=True))
+
+        self.assertEqual(len(packets), 2)
+        self.assertEqual([packet.run_id for packet in packets], ["results", "results-2"])
 
     def test_export_monitor_waits_for_nonempty_stable_output(self):
         with tempfile.TemporaryDirectory() as directory:

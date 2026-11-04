@@ -134,27 +134,45 @@ instrument run.
 ### Install with MCP support
 
 ```bash
-pip install "hg-mc-auto[mcp]"
+python -m venv .venv
+# MCP SDK 2.x requires Python 3.10 or newer.
+# Windows PowerShell:
+.venv\Scripts\python -m pip install -e ".[mcp,excel]"
+.venv\Scripts\Activate.ps1
+# Then:
 hgmc mcp --action status
+# macOS/Linux:
+# .venv/bin/python -m pip install -e ".[mcp,excel]"
+# . .venv/bin/activate
+# hgmc mcp --action status
 ```
 
 ### Connect this checkout to VS Code Agent
 
-When opening this repository as the VS Code workspace, it includes
-`.vscode/mcp.json`. Run **MCP: List Servers**, select `hg-mc-auto`, then start
-the server. In Chat, choose Agent mode and enable the server's tools. If VS Code
-does not discover the configuration, run **Developer: Reload Window** and
-inspect **MCP: Show Installed Servers**.
+When opening this repository as the VS Code workspace, `.vscode/mcp.json`
+starts the MCP server with the repository-local `.venv` Python environment.
+After installing the MCP and Excel extras above, run **MCP: List Servers**,
+select `hg-mc-auto`, then start the server. In Chat, choose Agent mode and
+enable the server's tools. If VS Code does not discover the configuration,
+run **Developer: Reload Window** and inspect **MCP: Show Installed Servers**.
 
-The workspace configuration uses the repository-local virtual environment. If
-you moved or renamed that environment, update the command in `.vscode/mcp.json`.
+If you moved or renamed the virtual environment, update the command in
+`.vscode/mcp.json`.
 
 Try asking the Agent: “Use Hg-MC-Auto MCP to list the supported elements and
 explain the Hg workflow.” It should call `list_elements` and `resolve_workflow`.
 
 Current tools provide metadata, workflow routing, plans, and structured QC
-packet creation. In particular, `run_element_task` only resolves the target
-script; it does not execute Evaluation GUI automation or control the instrument.
+packet creation. `run_element_task` resolves a route but does not execute the
+scientific workflow; its response says `not_executed`. `run_agent_plan` returns
+a plan only. Use `create_qc_packets` to make one review-required packet per row.
+Packet creation adapts existing QC metrics and flags; it does not classify raw
+measurements by itself. These tools do not perform instrument operations or
+approve scientific results. `scan_result_directory` performs one stateful scan
+for stable new or modified result files. `assess_qc_file` requires an explicit
+tool call and `ORCA_KEY`; it sends the structured QC packet, not the raw file,
+to the configured provider and keeps the response advisory. CLI `qc --llm`
+intentionally accepts only one result row per provider request.
 
 ### Notes
 
@@ -351,7 +369,7 @@ hgmc --help
 
 ## 5) 🚦 Release status
 
-This project is currently in a release-oriented v0.1.0 state with:
+This project is currently in a release-oriented v0.1.1 state with:
 
 - bilingual CLI support
 - generalized element routing for `hg`, `fe`, and `cd`
@@ -421,8 +439,8 @@ We welcome experts from different laboratories to contribute their expertise
 and make contributions to the intelligent geochemistry laboratory. Welcome to
 join us and make a change together.
 
-- **Chufan Zhou**: 📧 zhouchufan@mail.gyig.ac.cn · 🔗 [ORCID 0009-0008-0144-9017](https://orcid.org/0009-0008-0144-9017)
 - **Qiang Huang** (Corresponding Author): 📧 huangqiang@mail.gyig.ac.cn · 🔗 [ORCID 0000-0003-1568-9042](https://orcid.org/0000-0003-1568-9042)
+- **Chufan Zhou**: 📧 zhouchufan@mail.gyig.ac.cn · 🔗 [ORCID 0009-0008-0144-9017](https://orcid.org/0009-0008-0144-9017)
 
 For development questions or collaboration, use the repository issue tracker
 or project maintainer contact listed above.

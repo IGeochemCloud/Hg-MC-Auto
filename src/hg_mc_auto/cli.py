@@ -115,6 +115,13 @@ def run_command(
     routed = resolve_element_task(element, task)
     typer.echo(f"Element: {workflow['display_name']}")
     typer.echo(f"Task: {task}")
+    if routed["implementation_status"] == "scaffold":
+        typer.echo(routed["description"])
+        raise typer.Exit(code=2)
+    if routed["implementation_status"] == "requires_task_selection":
+        typer.echo(f"Available scripts: {', '.join(routed['scripts'])}")
+        typer.echo("Select a specific training workflow before execution.")
+        raise typer.Exit(code=2)
     typer.echo(f"Script: {routed['script']}")
     typer.echo(f"Language: {language}")
     if data_path:
@@ -159,12 +166,16 @@ def platform_support() -> None:
 @app.command("project-summary")
 def project_summary() -> None:
     """Summarize the current project state for agent and release use."""
-    typer.echo("name: hg-mc-auto")
-    typer.echo("version: 0.1.0")
-    typer.echo("elements: hg, fe, cd")
-    typer.echo("platforms: windows, linux, macos")
-    typer.echo("bilingual: true")
-    typer.echo("mcp_ready: true")
+    from hg_mc_auto.mcp_server import MCP_AVAILABLE, server
+
+    summary = server.project_summary()
+    typer.echo(f"name: {summary['name']}")
+    typer.echo(f"version: {summary['version']}")
+    typer.echo(f"elements: {', '.join(summary['elements'])}")
+    typer.echo(f"platforms: {', '.join(summary['platforms'])}")
+    typer.echo(f"bilingual: {summary['bilingual']}")
+    typer.echo(f"mcp_ready: {MCP_AVAILABLE}")
+    typer.echo(f"scientific_task_execution: {summary['scientific_task_execution']}")
 
 
 @app.command("guide")
@@ -216,14 +227,16 @@ def quality_control_command(
     model: str = typer.Option("orcarouter/auto", "--model", help="OpenAI-compatible model identifier."),
 ) -> None:
     """Create a structured QC packet and optionally request advisory interpretation."""
-    from hg_mc_auto.quality_control import packet_from_result_file, request_llm_assessment
+    from hg_mc_auto.quality_control import packets_from_result_file, request_llm_assessment
 
     try:
-        packet = packet_from_result_file(input_path)
-        payload = packet.to_dict()
+        packets = packets_from_result_file(input_path)
+        if request_llm and len(packets) != 1:
+            raise ValueError("--llm supports one result row per request to avoid unintended repeated provider calls")
+        payloads = [packet.to_dict() for packet in packets]
         if request_llm:
-            payload["llm_assessment"] = request_llm_assessment(
-                packet,
+            payloads[0]["llm_assessment"] = request_llm_assessment(
+                packets[0],
                 model=model,
                 language=language,
             )
@@ -231,7 +244,8 @@ def quality_control_command(
         typer.echo(f"QC processing failed: {exc}", err=True)
         raise typer.Exit(code=1)
 
-    rendered = json.dumps(payload, ensure_ascii=False, indent=2)
+    rendered_payload: dict | list = payloads[0] if len(payloads) == 1 else payloads
+    rendered = json.dumps(rendered_payload, ensure_ascii=False, indent=2)
     if output_path:
         output_path.write_text(rendered + "\n", encoding="utf-8")
         typer.echo(f"QC output written to {output_path}")
@@ -266,16 +280,20 @@ def mcp_command(
     from hg_mc_auto.mcp_server import server
 
     if action == "status":
+        from hg_mc_auto.mcp_server import MCP_AVAILABLE
+
         payload = {
             "name": "hg-mc-auto",
-            "mcp_ready": True,
+            "mcp_ready": MCP_AVAILABLE,
+            "scientific_task_execution": False,
             "tools": server.available_tools(),
             "elements": server.list_elements(),
         }
         if json_output:
             typer.echo(json.dumps(payload, ensure_ascii=False, indent=2))
         else:
-            typer.echo("MCP status: ready")
+            typer.echo(f"MCP stdio: {'ready' if payload['mcp_ready'] else 'unavailable (install hg-mc-auto[mcp])'}")
+            typer.echo("Scientific task execution: not available through MCP")
             typer.echo(f"Tools: {', '.join(payload['tools'])}")
             typer.echo(f"Elements: {', '.join(payload['elements'])}")
         return
